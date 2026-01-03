@@ -31,6 +31,9 @@ services:
     environment:
       SPRING_PROFILES_ACTIVE: dev
       SPRING_CONFIG_LOCATION: file:/runtime/config/
+      JWT_SECRET: ${JWT_SECRET}
+      BOOTSTRAP_ADMIN_EMAIL: ${BOOTSTRAP_ADMIN_EMAIL}
+      BOOTSTRAP_ADMIN_PASSWORD: ${BOOTSTRAP_ADMIN_PASSWORD}
     volumes:
       - ../runtime/config:/runtime/config:ro
     ports:

@@ -7,8 +7,22 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: validate
+      ddl-auto: update
     open-in-view: false
 
   flyway:
-    enabled: false   # set true later when we add migrations
+    enabled: true
+    locations: classpath:db/migration   # set true later when we add migrations
+
+security:
+  jwt:
+    secret: ${JWT_SECRET}
+    expirationMinutes: 120
+    issuer: giftbox-oms
+
+app:
+  bootstrap:
+    admin:
+      enabled: true
+      email: ${BOOTSTRAP_ADMIN_EMAIL}
+      password: ${BOOTSTRAP_ADMIN_PASSWORD}
