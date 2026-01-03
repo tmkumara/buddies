@@ -1,0 +1,8 @@
+spring:
+  application:
+    name: giftbox-oms
+  profiles:
+    default: dev
+
+server:
+  port: 8080

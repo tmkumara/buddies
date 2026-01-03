@@ -1,0 +1,34 @@
+# -------- Build stage --------
+FROM maven:3.9.9-eclipse-temurin-17 AS build
+WORKDIR /src
+
+# Copy backend only (faster caching)
+COPY backend/pom.xml backend/pom.xml
+COPY backend/oms-domain/pom.xml backend/oms-domain/pom.xml
+COPY backend/oms-application/pom.xml backend/oms-application/pom.xml
+COPY backend/oms-infrastructure/pom.xml backend/oms-infrastructure/pom.xml
+COPY backend/oms-api/pom.xml backend/oms-api/pom.xml
+
+# Download deps first (cache)
+RUN mvn -f backend/pom.xml -DskipTests dependency:go-offline
+
+# Copy source
+COPY backend backend
+
+# Build fat jar
+RUN mvn -f backend/pom.xml -DskipTests clean package
+
+# -------- Runtime stage --------
+FROM eclipse-temurin:17-jre
+WORKDIR /app
+
+# Copy jar
+COPY --from=build /src/backend/oms-api/target/*.jar /app/app.jar
+
+# External config will be mounted to /runtime/config
+ENV SPRING_CONFIG_LOCATION=file:/runtime/config/
+ENV SPRING_PROFILES_ACTIVE=dev
+
+EXPOSE 8080
+
+ENTRYPOINT ["java","-jar","/app/app.jar"]
