@@ -7,7 +7,7 @@ if "%BOOTSTRAP_ADMIN_EMAIL%"=="" set BOOTSTRAP_ADMIN_EMAIL=admin@example.com
 if "%BOOTSTRAP_ADMIN_PASSWORD%"=="" set BOOTSTRAP_ADMIN_PASSWORD=admin123
 
 REM Start MySQL, backend, and web (frontend) containers via docker-compose.
-REM The docker-compose file already brings up all services together.
+REM Backend will be exposed on http://localhost:8081.
 docker compose -f docker\docker-compose.dev.yml up --build
 
 endlocal
