@@ -32,7 +32,7 @@ public class AuthController {
         LoginResult result = authService.login(new LoginCommand(req.getEmail(), req.getPassword()));
 
         Long userId = result.user().id() == null ? null : result.user().id().value();
-        String token = jwt.generateToken(userId, result.user().email(), result.user().roles());
+        String token = jwt.generateToken(userId, result.user().email());
 
         UserResponse user = new UserResponse(userId, result.user().email(), result.user().roles());
         return ResponseEntity.ok(new LoginResponse(token, user));

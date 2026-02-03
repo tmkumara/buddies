@@ -3,6 +3,7 @@ package com.buddies.giftbox.oms.api.config;
 import com.buddies.giftbox.oms.api.security.JwtAuthenticationFilter;
 import com.buddies.giftbox.oms.api.security.JwtProperties;
 import com.buddies.giftbox.oms.api.security.JwtTokenService;
+import com.buddies.giftbox.oms.domain.auth.UserRepository;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -31,8 +32,8 @@ public class SecurityConfig {
     }
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http, JwtTokenService jwtTokenService) throws Exception {
-        JwtAuthenticationFilter jwtFilter = new JwtAuthenticationFilter(jwtTokenService);
+    public SecurityFilterChain securityFilterChain(HttpSecurity http, JwtTokenService jwtTokenService, UserRepository userRepository) throws Exception {
+        JwtAuthenticationFilter jwtFilter = new JwtAuthenticationFilter(jwtTokenService, userRepository);
 
         http
                 .csrf(csrf -> csrf.disable())

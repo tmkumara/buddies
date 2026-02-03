@@ -1,6 +1,5 @@
 package com.buddies.giftbox.oms.api.security;
 
-import com.buddies.giftbox.oms.domain.auth.Role;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jws;
 import io.jsonwebtoken.Jwts;
@@ -11,8 +10,6 @@ import javax.crypto.SecretKey;
 import java.time.Instant;
 import java.util.Base64;
 import java.util.Date;
-import java.util.HashSet;
-import java.util.Set;
 
 @Service
 public class JwtTokenService {
@@ -25,7 +22,7 @@ public class JwtTokenService {
         this.key = Keys.hmacShaKeyFor(decodeBase64(props.getSecret()));
     }
 
-    public String generateToken(Long userId, String email, Set<Role> roles) {
+    public String generateToken(Long userId, String email) {
         Instant now = Instant.now();
         Instant exp = now.plusSeconds((long) props.getExpirationMinutes() * 60L);
 
@@ -35,7 +32,6 @@ public class JwtTokenService {
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(exp))
                 .claim("email", email)
-                .claim("roles", roles == null ? new String[0] : roles.stream().map(Enum::name).toArray(String[]::new))
                 .signWith(key)
                 .compact();
     }
@@ -52,26 +48,7 @@ public class JwtTokenService {
         Long userId = Long.valueOf(c.getSubject());
         String email = c.get("email", String.class);
 
-        Object rawRoles = c.get("roles");
-        Set<Role> roles = new HashSet<Role>();
-
-        if (rawRoles instanceof java.util.List) {
-            java.util.List list = (java.util.List) rawRoles;
-            for (Object o : list) {
-                if (o != null) {
-                    roles.add(Role.valueOf(String.valueOf(o)));
-                }
-            }
-        } else if (rawRoles instanceof String[]) {
-            String[] arr = (String[]) rawRoles;
-            for (String r : arr) {
-                if (r != null) {
-                    roles.add(Role.valueOf(r));
-                }
-            }
-        }
-
-        return new AuthPrincipal(userId, email, roles);
+        return new AuthPrincipal(userId, email, java.util.Collections.emptySet());
     }
 
     private static byte[] decodeBase64(String secret) {
