@@ -28,6 +28,8 @@ services:
     restart: unless-stopped
     depends_on:
       - mysql
+    env_file:
+      - ./docker/.env
     environment:
       SPRING_PROFILES_ACTIVE: dev
       SPRING_CONFIG_LOCATION: file:/runtime/config/
