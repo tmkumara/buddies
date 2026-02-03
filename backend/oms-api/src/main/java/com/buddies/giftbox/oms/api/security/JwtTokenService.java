@@ -7,6 +7,7 @@ import io.jsonwebtoken.security.Keys;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Base64;
 import java.util.Date;
@@ -19,7 +20,7 @@ public class JwtTokenService {
 
     public JwtTokenService(JwtProperties props) {
         this.props = props;
-        this.key = Keys.hmacShaKeyFor(decodeBase64(props.getSecret()));
+        this.key = Keys.hmacShaKeyFor(resolveKeyBytes(props.getSecret()));
     }
 
     public String generateToken(Long userId, String email) {
@@ -51,14 +52,31 @@ public class JwtTokenService {
         return new AuthPrincipal(userId, email, java.util.Collections.emptySet());
     }
 
-    private static byte[] decodeBase64(String secret) {
+    static byte[] resolveKeyBytes(String secret) {
         if (secret == null || secret.trim().isEmpty()) {
             throw new IllegalStateException("JWT secret is missing. Set security.jwt.secret (JWT_SECRET).");
         }
-        try {
-            return Base64.getDecoder().decode(secret.trim());
-        } catch (IllegalArgumentException e) {
-            throw new IllegalStateException("JWT secret must be Base64 encoded (security.jwt.secret).", e);
+
+        String normalized = secret.trim();
+        byte[] keyBytes;
+
+        if (normalized.startsWith("base64:")) {
+            String encoded = normalized.substring("base64:".length()).trim();
+            try {
+                keyBytes = Base64.getDecoder().decode(encoded);
+            } catch (IllegalArgumentException e) {
+                throw new IllegalStateException("JWT secret base64 value is invalid. Expected base64:<value>.", e);
+            }
+        } else {
+            keyBytes = normalized.getBytes(StandardCharsets.UTF_8);
         }
+
+        if (keyBytes.length < 32) {
+            throw new IllegalStateException(
+                    "JWT secret is too short for HS256 (min 32 bytes). " +
+                            "Provide a longer raw string or use base64:<32+ byte secret>.");
+        }
+
+        return keyBytes;
     }
 }

@@ -33,7 +33,7 @@ services:
     environment:
       SPRING_PROFILES_ACTIVE: dev
       SPRING_CONFIG_LOCATION: file:/runtime/config/
-      JWT_SECRET: ${JWT_SECRET:-ZGV2LWp3dC1zZWNyZXQtMzItYnl0ZXMtbG9uZyE=}
+      JWT_SECRET: ${JWT_SECRET:-base64:ZGV2LWp3dC1zZWNyZXQtMzItYnl0ZXMtbG9uZyEhISE=}
       BOOTSTRAP_ADMIN_EMAIL: ${BOOTSTRAP_ADMIN_EMAIL:-admin@example.com}
       BOOTSTRAP_ADMIN_PASSWORD: ${BOOTSTRAP_ADMIN_PASSWORD:-admin123}
     volumes:
