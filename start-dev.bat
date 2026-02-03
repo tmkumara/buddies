@@ -2,7 +2,7 @@
 setlocal
 
 REM Default environment values for local dev (override by setting env vars before running).
-if "%JWT_SECRET%"=="" set JWT_SECRET=ZGV2LXNlY3JldA==
+if "%JWT_SECRET%"=="" set JWT_SECRET=ZGV2LWp3dC1zZWNyZXQtMzItYnl0ZXMtbG9uZyE=
 if "%BOOTSTRAP_ADMIN_EMAIL%"=="" set BOOTSTRAP_ADMIN_EMAIL=admin@example.com
 if "%BOOTSTRAP_ADMIN_PASSWORD%"=="" set BOOTSTRAP_ADMIN_PASSWORD=admin123
 
