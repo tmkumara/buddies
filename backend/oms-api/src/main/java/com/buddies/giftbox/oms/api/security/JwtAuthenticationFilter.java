@@ -1,25 +1,23 @@
 package com.buddies.giftbox.oms.api.security;
 
-import com.buddies.giftbox.oms.domain.auth.Role;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.util.List;
+import java.util.stream.Collectors;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
-    private final JwtTokenService jwt;
+    private final JwtTokenService jwtTokenService;
 
-    public JwtAuthenticationFilter(JwtTokenService jwt) {
-        this.jwt = jwt;
+    public JwtAuthenticationFilter(JwtTokenService jwtTokenService) {
+        this.jwtTokenService = jwtTokenService;
     }
 
     @Override
@@ -30,23 +28,21 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String header = request.getHeader("Authorization");
         if (header != null && header.startsWith("Bearer ")) {
             String token = header.substring("Bearer ".length()).trim();
-
             try {
-                AuthPrincipal principal = jwt.parseAndValidate(token);
+                AuthPrincipal principal = jwtTokenService.parseAndValidate(token);
 
-                List<SimpleGrantedAuthority> authorities = new ArrayList<SimpleGrantedAuthority>();
-                for (Role r : principal.roles()) {
-                    authorities.add(new SimpleGrantedAuthority("ROLE_" + r.name()));
-                }
+                List<SimpleGrantedAuthority> authorities = principal.getRoles().stream()
+                        .map(role -> new SimpleGrantedAuthority("ROLE_" + role))
+                        .collect(Collectors.toList());
 
-                UsernamePasswordAuthenticationToken auth =
+                authorities.addAll(principal.getPermissions().stream()
+                        .map(permission -> new SimpleGrantedAuthority("PERMISSION_" + permission))
+                        .toList());
+
+                UsernamePasswordAuthenticationToken authentication =
                         new UsernamePasswordAuthenticationToken(principal, null, authorities);
-
-                SecurityContextHolder.getContext().setAuthentication(auth);
-
+                SecurityContextHolder.getContext().setAuthentication(authentication);
             } catch (Exception ex) {
-                // Invalid token -> clear context and continue; entry point will return 401 for protected endpoints
-                logger.warn("JWT invalid: {"+ex.getMessage()+"}");
                 SecurityContextHolder.clearContext();
             }
         }

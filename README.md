@@ -1,12 +1,66 @@
-# React + Vite
+# Buddies OMS Monorepo
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Production-ready monorepo with a Spring Boot 3 (Java 17) backend, React (Vite + TypeScript) frontend, and MySQL, all runnable with a single Docker Compose command.
 
-Currently, two official plugins are available:
+## Project Structure
+```
+/
+  backend/
+    pom.xml
+    oms-api/
+    oms-application/
+    oms-domain/
+    oms-infrastructure/
+  frontend/
+  docker/
+    docker-compose.dev.yml
+    Dockerfile.backend
+    Dockerfile.frontend
+    nginx.conf
+  .env
+  README.md
+```
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Quick Start (Local)
+```bash
+docker compose -f docker/docker-compose.dev.yml up --build
+```
 
-## Expanding the ESLint configuration
+### Services
+- Backend: http://localhost:8080
+- Frontend: http://localhost:5173
+- Swagger UI: http://localhost:8080/swagger-ui.html
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+### Default Credentials
+- Admin: `admin@local` / `Admin@1234`
+- User: `user@local` / `User@1234`
+
+## Backend Overview
+- Spring Boot 3.x (Java 17)
+- Security: JWT access + refresh tokens (refresh in HttpOnly cookie)
+- RBAC with roles + permissions
+- Flyway migrations for schema
+- Testcontainers integration test for auth flows
+- Global exception handler with structured responses
+
+## Frontend Overview
+- React + Vite + TypeScript
+- Redux Toolkit for auth state
+- React Router
+- MUI components
+- Protected routes and permission-based navigation
+- Login, profile, and admin management screens
+
+## Environment Variables
+See `.env` for defaults. You can update any values before running Docker Compose.
+
+Key values:
+- `MYSQL_DATABASE`, `MYSQL_USER`, `MYSQL_PASSWORD`
+- `JWT_SECRET`, `JWT_ACCESS_MINUTES`, `JWT_REFRESH_DAYS`
+- `BOOTSTRAP_ADMIN_EMAIL`, `BOOTSTRAP_ADMIN_PASSWORD`
+
+## Smoke Test Steps
+1. `docker compose -f docker/docker-compose.dev.yml up --build`
+2. Visit `http://localhost:5173` and sign in using the admin credentials.
+3. Navigate to **Users**, **Roles**, and **Permissions** in the sidebar.
+4. Open Swagger UI at `http://localhost:8080/swagger-ui.html`.
