@@ -3,15 +3,17 @@ version: "3.9"
 services:
   mysql:
     image: mysql:8.0
-    container_name: giftbox-mysql
+    container_name: buddies-mysql
     restart: unless-stopped
+    env_file:
+      - ../.env
     environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: giftbox_oms
-      MYSQL_USER: giftbox
-      MYSQL_PASSWORD: giftbox
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-oms}
+      MYSQL_USER: ${MYSQL_USER:-oms}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-oms}
     ports:
-      - "3307:3306"
+      - "3306:3306"
     volumes:
       - mysql_data:/var/lib/mysql
     command: [
@@ -24,31 +26,39 @@ services:
     build:
       context: ..
       dockerfile: docker/Dockerfile.backend
-    container_name: giftbox-backend
+    container_name: buddies-backend
     restart: unless-stopped
     depends_on:
       - mysql
+    env_file:
+      - ../.env
     environment:
-      SPRING_PROFILES_ACTIVE: dev
-      SPRING_CONFIG_LOCATION: file:/runtime/config/
+      MYSQL_URL: jdbc:mysql://mysql:3306/${MYSQL_DATABASE:-oms}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      MYSQL_USER: ${MYSQL_USER:-oms}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-oms}
       JWT_SECRET: ${JWT_SECRET}
-      BOOTSTRAP_ADMIN_EMAIL: ${BOOTSTRAP_ADMIN_EMAIL}
-      BOOTSTRAP_ADMIN_PASSWORD: ${BOOTSTRAP_ADMIN_PASSWORD}
-    volumes:
-      - ../runtime/config:/runtime/config:ro
     ports:
       - "8080:8080"
 
-  web:
+  frontend:
     build:
       context: ..
       dockerfile: docker/Dockerfile.frontend
-    container_name: giftbox-web
+      target: dev
+    container_name: buddies-frontend
     restart: unless-stopped
     depends_on:
       - backend
+    env_file:
+      - ../.env
+    environment:
+      VITE_API_BASE_URL: http://backend:8080
+      CHOKIDAR_USEPOLLING: "true"
     ports:
-      - "8088:80"
+      - "5173:5173"
+    volumes:
+      - ../frontend:/app
+      - /app/node_modules
 
 volumes:
   mysql_data:

@@ -1,13 +1,10 @@
 package com.buddies.giftbox.oms.api.auth.dto;
 
+import lombok.Builder;
+import lombok.Value;
+
+@Value
+@Builder
 public class MeResponse {
-    private final UserResponse user;
-
-    public MeResponse(UserResponse user) {
-        this.user = user;
-    }
-
-    public UserResponse getUser() {
-        return user;
-    }
+    UserResponse user;
 }
