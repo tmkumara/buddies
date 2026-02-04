@@ -26,6 +26,15 @@ Production-ready monorepo with a Spring Boot 3 (Java 17) backend, React (Vite + 
 docker compose -f docker/docker-compose.dev.yml up --build
 ```
 
+If you see an orphan container warning (e.g. `giftbox-web`), clean it up with:
+```bash
+docker compose -f docker/docker-compose.dev.yml up --build --remove-orphans
+```
+or
+```bash
+docker compose -f docker/docker-compose.dev.yml down --remove-orphans
+```
+
 ### Services
 - Backend: http://localhost:8080
 - Frontend: http://localhost:5173

@@ -20,7 +20,7 @@ logging:
 
 security:
   jwt:
-    secret: ${JWT_SECRET:change-me}
+    secret: ${JWT_SECRET}
     issuer: ${JWT_ISSUER:buddies-oms}
     access-token-minutes: ${JWT_ACCESS_MINUTES:15}
     refresh-token-days: ${JWT_REFRESH_DAYS:7}

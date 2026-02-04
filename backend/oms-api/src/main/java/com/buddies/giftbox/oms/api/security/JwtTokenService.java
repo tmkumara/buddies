@@ -85,12 +85,34 @@ public class JwtTokenService implements TokenService {
 
     private byte[] resolveSecret(String secret) {
         if (secret == null || secret.isBlank()) {
-            throw new IllegalStateException("JWT secret is missing. Set security.jwt.secret (JWT_SECRET). ");
+            throw new IllegalStateException("JWT secret is missing. Set security.jwt.secret (JWT_SECRET).");
         }
+        String trimmed = secret.trim();
+        byte[] decoded = tryDecodeBase64(trimmed);
+        if (decoded != null) {
+            validateLength(decoded.length, true);
+            return decoded;
+        }
+
+        byte[] rawBytes = trimmed.getBytes(StandardCharsets.UTF_8);
+        validateLength(rawBytes.length, false);
+        return rawBytes;
+    }
+
+    private byte[] tryDecodeBase64(String secret) {
         try {
-            return Base64.getDecoder().decode(secret.trim());
+            return Base64.getDecoder().decode(secret);
         } catch (IllegalArgumentException ex) {
-            return secret.getBytes(StandardCharsets.UTF_8);
+            return null;
+        }
+    }
+
+    private void validateLength(int length, boolean base64) {
+        if (length < 32) {
+            String format = base64 ? "Base64" : "plain text";
+            throw new IllegalStateException(
+                    "JWT secret is too short for HMAC-SHA. Provide a " + format
+                            + " secret of at least 32 bytes (256 bits).");
         }
     }
 

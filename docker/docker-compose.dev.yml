@@ -36,6 +36,7 @@ services:
       MYSQL_URL: jdbc:mysql://mysql:3306/${MYSQL_DATABASE:-oms}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
       MYSQL_USER: ${MYSQL_USER:-oms}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD:-oms}
+      JWT_SECRET: ${JWT_SECRET}
     ports:
       - "8080:8080"
 
