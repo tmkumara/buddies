@@ -4,10 +4,10 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 
 @ConfigurationProperties(prefix = "security.jwt")
 public class JwtProperties {
-
     private String secret;
-    private int expirationMinutes = 120;
-    private String issuer = "giftbox-oms";
+    private String issuer = "buddies-oms";
+    private long accessTokenMinutes = 15;
+    private long refreshTokenDays = 7;
 
     public String getSecret() {
         return secret;
@@ -17,19 +17,27 @@ public class JwtProperties {
         this.secret = secret;
     }
 
-    public int getExpirationMinutes() {
-        return expirationMinutes;
-    }
-
-    public void setExpirationMinutes(int expirationMinutes) {
-        this.expirationMinutes = expirationMinutes;
-    }
-
     public String getIssuer() {
         return issuer;
     }
 
     public void setIssuer(String issuer) {
         this.issuer = issuer;
+    }
+
+    public long getAccessTokenMinutes() {
+        return accessTokenMinutes;
+    }
+
+    public void setAccessTokenMinutes(long accessTokenMinutes) {
+        this.accessTokenMinutes = accessTokenMinutes;
+    }
+
+    public long getRefreshTokenDays() {
+        return refreshTokenDays;
+    }
+
+    public void setRefreshTokenDays(long refreshTokenDays) {
+        this.refreshTokenDays = refreshTokenDays;
     }
 }
