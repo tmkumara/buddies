@@ -5,11 +5,13 @@ services:
     image: mysql:8.0
     container_name: buddies-mysql
     restart: unless-stopped
+    env_file:
+      - ../.env
     environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      MYSQL_DATABASE: ${MYSQL_DATABASE}
-      MYSQL_USER: ${MYSQL_USER}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-oms}
+      MYSQL_USER: ${MYSQL_USER:-oms}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-oms}
     ports:
       - "3306:3306"
     volumes:
@@ -31,9 +33,9 @@ services:
     env_file:
       - ../.env
     environment:
-      MYSQL_URL: jdbc:mysql://mysql:3306/${MYSQL_DATABASE}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
-      MYSQL_USER: ${MYSQL_USER}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_URL: jdbc:mysql://mysql:3306/${MYSQL_DATABASE:-oms}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      MYSQL_USER: ${MYSQL_USER:-oms}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-oms}
     ports:
       - "8080:8080"
 
