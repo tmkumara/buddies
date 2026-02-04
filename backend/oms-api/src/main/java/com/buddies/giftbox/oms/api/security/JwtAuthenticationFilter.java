@@ -1,6 +1,9 @@
 package com.buddies.giftbox.oms.api.security;
 
 import com.buddies.giftbox.oms.domain.auth.Role;
+import com.buddies.giftbox.oms.domain.auth.User;
+import com.buddies.giftbox.oms.domain.auth.UserId;
+import com.buddies.giftbox.oms.domain.auth.UserRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -17,9 +20,11 @@ import java.util.List;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtTokenService jwt;
+    private final UserRepository users;
 
-    public JwtAuthenticationFilter(JwtTokenService jwt) {
+    public JwtAuthenticationFilter(JwtTokenService jwt, UserRepository users) {
         this.jwt = jwt;
+        this.users = users;
     }
 
     @Override
@@ -33,14 +38,22 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
             try {
                 AuthPrincipal principal = jwt.parseAndValidate(token);
+                UserId userId = new UserId(principal.userId());
+                User user = users.findById(userId).orElse(null);
+                if (user == null || !user.active()) {
+                    SecurityContextHolder.clearContext();
+                    filterChain.doFilter(request, response);
+                    return;
+                }
 
                 List<SimpleGrantedAuthority> authorities = new ArrayList<SimpleGrantedAuthority>();
-                for (Role r : principal.roles()) {
+                for (Role r : user.roles()) {
                     authorities.add(new SimpleGrantedAuthority("ROLE_" + r.name()));
                 }
 
+                AuthPrincipal resolvedPrincipal = new AuthPrincipal(user.id().value(), user.email(), user.roles());
                 UsernamePasswordAuthenticationToken auth =
-                        new UsernamePasswordAuthenticationToken(principal, null, authorities);
+                        new UsernamePasswordAuthenticationToken(resolvedPrincipal, null, authorities);
 
                 SecurityContextHolder.getContext().setAuthentication(auth);
 

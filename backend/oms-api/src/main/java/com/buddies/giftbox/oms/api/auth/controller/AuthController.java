@@ -6,11 +6,14 @@ import com.buddies.giftbox.oms.api.auth.dto.MeResponse;
 import com.buddies.giftbox.oms.api.auth.dto.UserResponse;
 import com.buddies.giftbox.oms.api.security.AuthPrincipal;
 import com.buddies.giftbox.oms.api.security.JwtTokenService;
-import com.buddies.giftbox.oms.application.auth.AuthService;
-import com.buddies.giftbox.oms.application.auth.LoginCommand;
-import com.buddies.giftbox.oms.application.auth.LoginResult;
+import com.buddies.giftbox.oms.application.auth.AuthException;
+import com.buddies.giftbox.oms.domain.auth.User;
+import com.buddies.giftbox.oms.domain.auth.UserRepository;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
@@ -18,24 +21,40 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/auth")
 public class AuthController {
 
-    private final AuthService authService;
+    private final AuthenticationManager authenticationManager;
+    private final UserRepository userRepository;
     private final JwtTokenService jwt;
 
-    public AuthController(AuthService authService, JwtTokenService jwt) {
-        this.authService = authService;
+    public AuthController(AuthenticationManager authenticationManager, UserRepository userRepository, JwtTokenService jwt) {
+        this.authenticationManager = authenticationManager;
+        this.userRepository = userRepository;
         this.jwt = jwt;
     }
 
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest req) {
 
-        LoginResult result = authService.login(new LoginCommand(req.getEmail(), req.getPassword()));
+        try {
+            authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(req.getEmail(), req.getPassword())
+            );
+        } catch (AuthenticationException ex) {
+            throw new AuthException("Invalid credentials");
+        }
 
-        Long userId = result.user().id() == null ? null : result.user().id().value();
-        String token = jwt.generateToken(userId, result.user().email(), result.user().roles());
+        String email = (req.getEmail() == null) ? "" : req.getEmail().trim().toLowerCase();
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new AuthException("Invalid credentials"));
 
-        UserResponse user = new UserResponse(userId, result.user().email(), result.user().roles());
-        return ResponseEntity.ok(new LoginResponse(token, user));
+        if (!user.active()) {
+            throw new AuthException("User is disabled");
+        }
+
+        Long userId = user.id() == null ? null : user.id().value();
+        String token = jwt.generateToken(userId, user.email());
+
+        UserResponse userResponse = new UserResponse(userId, user.email(), user.roles());
+        return ResponseEntity.ok(new LoginResponse(token, userResponse));
     }
 
     @GetMapping("/me")
