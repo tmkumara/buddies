@@ -5,9 +5,11 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @ConfigurationProperties(prefix = "app.bootstrap.admin")
 public class AdminBootstrapProperties {
 
-    private boolean enabled = false;
-    private String email;
-    private String password;
+    private boolean enabled = true;
+    private String email = "admin@local";
+    private String password = "Admin@1234";
+    private String sampleEmail = "user@local";
+    private String samplePassword = "User@1234";
 
     public boolean isEnabled() {
         return enabled;
@@ -31,5 +33,21 @@ public class AdminBootstrapProperties {
 
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    public String getSampleEmail() {
+        return sampleEmail;
+    }
+
+    public void setSampleEmail(String sampleEmail) {
+        this.sampleEmail = sampleEmail;
+    }
+
+    public String getSamplePassword() {
+        return samplePassword;
+    }
+
+    public void setSamplePassword(String samplePassword) {
+        this.samplePassword = samplePassword;
     }
 }
