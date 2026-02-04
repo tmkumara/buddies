@@ -24,7 +24,7 @@ import {
   Typography,
 } from '@mui/material';
 import { useSnackbar } from 'notistack';
-import { AdminUser, createUser, fetchRoles, fetchUsers, toggleUser } from '../../api/adminApi';
+import { type AdminUser, createUser, fetchRoles, fetchUsers, toggleUser } from '../../api/adminApi';
 
 const AdminUsersPage = () => {
   const { enqueueSnackbar } = useSnackbar();

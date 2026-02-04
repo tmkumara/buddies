@@ -14,7 +14,7 @@ import {
   Typography,
 } from '@mui/material';
 import { useSnackbar } from 'notistack';
-import { createPermission, fetchPermissions, Permission } from '../../api/adminApi';
+import { createPermission, fetchPermissions, type Permission } from '../../api/adminApi';
 
 const AdminPermissionsPage = () => {
   const { enqueueSnackbar } = useSnackbar();
