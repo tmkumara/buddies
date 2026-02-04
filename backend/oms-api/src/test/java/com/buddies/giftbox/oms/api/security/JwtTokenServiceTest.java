@@ -26,6 +26,15 @@ class JwtTokenServiceTest {
     }
 
     @Test
+    void rejectsShortBase64Secret() {
+        JwtProperties props = new JwtProperties();
+        byte[] bytes = new byte[16];
+        props.setSecret(Base64.getEncoder().encodeToString(bytes));
+
+        assertThrows(IllegalStateException.class, () -> new JwtTokenService(props));
+    }
+
+    @Test
     void acceptsStrongPlainTextSecret() {
         JwtProperties props = new JwtProperties();
         props.setSecret("this-is-a-32-char-secret-value!!");

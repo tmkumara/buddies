@@ -1,5 +1,5 @@
 import api from './client';
-import { AuthUser } from '../features/auth/authSlice';
+import type { AuthUser } from '../features/auth/authSlice';
 
 export type AuthResponse = {
   user: AuthUser;

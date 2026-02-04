@@ -89,8 +89,7 @@ public class JwtTokenService implements TokenService {
         }
         String trimmed = secret.trim();
         byte[] decoded = tryDecodeBase64(trimmed);
-        if (decoded != null) {
-            validateLength(decoded.length, true);
+        if (decoded != null && decoded.length >= 32) {
             return decoded;
         }
 

@@ -68,6 +68,10 @@ Key values:
 - `JWT_SECRET`, `JWT_ACCESS_MINUTES`, `JWT_REFRESH_DAYS`
 - `BOOTSTRAP_ADMIN_EMAIL`, `BOOTSTRAP_ADMIN_PASSWORD`
 
+JWT secret guidance:
+- Prefer a Base64-encoded secret (at least 32 bytes after decoding).
+- Plain text is supported for local/dev only and must be at least 32 characters.
+
 ## Smoke Test Steps
 1. `docker compose -f docker/docker-compose.dev.yml up --build`
 2. Visit `http://localhost:5173` and sign in using the admin credentials.
