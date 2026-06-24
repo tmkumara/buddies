@@ -5,7 +5,7 @@ import { toggleBoxDesignActive } from "@/actions/box-designs";
 
 interface BoxDesign {
   id: number; code: string; name: string; custom: boolean; active: boolean;
-  lengthCm: unknown; widthCm: unknown; heightCm: unknown; unitPrice: unknown;
+  lengthCm: number; widthCm: number; heightCm: number; unitPrice: number;
   designType: { name: string };
   material: { name: string };
 }

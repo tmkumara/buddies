@@ -8,13 +8,24 @@ export default async function EditBoxDesignPage({ params }: { params: Promise<{ 
   await requireAuth();
   const { id } = await params;
 
-  const [boxDesign, designTypes, materials] = await Promise.all([
+  const [raw, designTypes, materials] = await Promise.all([
     prisma.boxDesign.findUnique({ where: { id: Number(id) } }),
     prisma.designType.findMany({ where: { active: true }, orderBy: { name: "asc" }, select: { id: true, code: true, name: true } }),
     prisma.material.findMany({ where: { active: true }, orderBy: { name: "asc" }, select: { id: true, code: true, name: true } }),
   ]);
 
-  if (!boxDesign) notFound();
+  if (!raw) notFound();
+
+  const boxDesign = {
+    ...raw,
+    lengthCm:    Number(raw.lengthCm),
+    widthCm:     Number(raw.widthCm),
+    heightCm:    Number(raw.heightCm),
+    cutLengthCm: Number(raw.cutLengthCm),
+    cutWidthCm:  Number(raw.cutWidthCm),
+    rawAreaSqCm: raw.rawAreaSqCm !== null ? Number(raw.rawAreaSqCm) : null,
+    unitPrice:   Number(raw.unitPrice),
+  };
 
   return (
     <>

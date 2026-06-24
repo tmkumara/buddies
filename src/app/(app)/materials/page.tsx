@@ -7,7 +7,14 @@ import MaterialRow from "./MaterialRow";
 
 export default async function MaterialsPage() {
   await requireAuth();
-  const materials = await prisma.material.findMany({ orderBy: { code: "asc" } });
+  const materials = (await prisma.material.findMany({ orderBy: { code: "asc" } })).map((m) => ({
+    ...m,
+    sheetLengthCm:     Number(m.sheetLengthCm),
+    sheetWidthCm:      Number(m.sheetWidthCm),
+    costPerSheet:      Number(m.costPerSheet),
+    minStockLevel:     Number(m.minStockLevel),
+    currentStockLevel: Number(m.currentStockLevel),
+  }));
 
   return (
     <>

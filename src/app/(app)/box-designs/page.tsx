@@ -8,13 +8,22 @@ import BoxDesignRow from "./BoxDesignRow";
 export default async function BoxDesignsPage() {
   await requireAuth();
 
-  const boxDesigns = await prisma.boxDesign.findMany({
+  const boxDesigns = (await prisma.boxDesign.findMany({
     orderBy: { code: "asc" },
     include: {
       designType: { select: { name: true } },
       material:   { select: { name: true } },
     },
-  });
+  })).map((bd) => ({
+    ...bd,
+    lengthCm:    Number(bd.lengthCm),
+    widthCm:     Number(bd.widthCm),
+    heightCm:    Number(bd.heightCm),
+    cutLengthCm: Number(bd.cutLengthCm),
+    cutWidthCm:  Number(bd.cutWidthCm),
+    rawAreaSqCm: bd.rawAreaSqCm !== null ? Number(bd.rawAreaSqCm) : null,
+    unitPrice:   Number(bd.unitPrice),
+  }));
 
   return (
     <>

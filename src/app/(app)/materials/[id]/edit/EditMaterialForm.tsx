@@ -7,8 +7,8 @@ import { updateMaterial } from "@/actions/materials";
 
 interface Material {
   id: number; code: string; name: string; gsm: number;
-  sheetLengthCm: unknown; sheetWidthCm: unknown;
-  costPerSheet: unknown; minStockLevel: unknown; currentStockLevel: unknown;
+  sheetLengthCm: number; sheetWidthCm: number;
+  costPerSheet: number; minStockLevel: number; currentStockLevel: number;
   active: boolean;
 }
 

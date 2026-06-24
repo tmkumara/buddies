@@ -7,8 +7,17 @@ import EditMaterialForm from "./EditMaterialForm";
 export default async function EditMaterialPage({ params }: { params: Promise<{ id: string }> }) {
   await requireAuth();
   const { id } = await params;
-  const material = await prisma.material.findUnique({ where: { id: Number(id) } });
-  if (!material) notFound();
+  const raw = await prisma.material.findUnique({ where: { id: Number(id) } });
+  if (!raw) notFound();
+
+  const material = {
+    ...raw,
+    sheetLengthCm:     Number(raw.sheetLengthCm),
+    sheetWidthCm:      Number(raw.sheetWidthCm),
+    costPerSheet:      Number(raw.costPerSheet),
+    minStockLevel:     Number(raw.minStockLevel),
+    currentStockLevel: Number(raw.currentStockLevel),
+  };
 
   return (
     <>

@@ -10,9 +10,9 @@ interface SelectOption { id: number; code: string; name: string; }
 
 interface BoxDesign {
   id: number; code: string; name: string; designTypeId: number; materialId: number;
-  lengthCm: unknown; widthCm: unknown; heightCm: unknown;
-  cutLengthCm: unknown; cutWidthCm: unknown;
-  unitPrice: unknown; custom: boolean; active: boolean;
+  lengthCm: number; widthCm: number; heightCm: number;
+  cutLengthCm: number; cutWidthCm: number;
+  unitPrice: number; custom: boolean; active: boolean;
 }
 
 interface Props {
