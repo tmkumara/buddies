@@ -1,0 +1,91 @@
+"use client";
+
+import { useState, FormEvent } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { createMaterial } from "@/actions/materials";
+import TopBar from "@/components/layout/TopBar";
+
+export default function NewMaterialPage() {
+  const router = useRouter();
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+    const result = await createMaterial(new FormData(e.currentTarget));
+    if (result.error) { setError(result.error); setLoading(false); }
+    else router.push("/materials");
+  }
+
+  return (
+    <>
+      <TopBar title="New Material" />
+      <div style={{ padding: "1.5rem 1.75rem", maxWidth: "600px" }}>
+        <Link href="/materials" className="nav-link" style={{ fontSize: "0.68rem", display: "inline-block", marginBottom: "1.25rem" }}>
+          ← Back to Materials
+        </Link>
+        <div className="content-card">
+          <h2 style={{ fontSize: "1rem", fontWeight: 600, color: "#F5B61E", letterSpacing: "0.04em", marginBottom: "1.5rem" }}>
+            New Material
+          </h2>
+          {error && <div className="form-error mb-5">{error}</div>}
+          <form onSubmit={handleSubmit} className="flex flex-col gap-4" noValidate>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+              <div className="form-field">
+                <label htmlFor="code" className="form-label">CODE *</label>
+                <input id="code" name="code" type="text" className="form-input" placeholder="ART-250" required />
+              </div>
+              <div className="form-field">
+                <label htmlFor="gsm" className="form-label">GSM * <span style={{ color: "rgba(240,237,230,0.3)", fontSize: "0.6rem" }}>(80–600)</span></label>
+                <input id="gsm" name="gsm" type="number" min="80" max="600" className="form-input" placeholder="250" required />
+              </div>
+            </div>
+            <div className="form-field">
+              <label htmlFor="name" className="form-label">NAME *</label>
+              <input id="name" name="name" type="text" className="form-input" placeholder="Art Board 250 GSM" required />
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+              <div className="form-field">
+                <label htmlFor="sheetLengthCm" className="form-label">SHEET LENGTH (cm) *</label>
+                <input id="sheetLengthCm" name="sheetLengthCm" type="number" step="0.01" min="0" className="form-input" placeholder="100" required />
+              </div>
+              <div className="form-field">
+                <label htmlFor="sheetWidthCm" className="form-label">SHEET WIDTH (cm) *</label>
+                <input id="sheetWidthCm" name="sheetWidthCm" type="number" step="0.01" min="0" className="form-input" placeholder="70" required />
+              </div>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "1rem" }}>
+              <div className="form-field">
+                <label htmlFor="costPerSheet" className="form-label">COST/SHEET *</label>
+                <input id="costPerSheet" name="costPerSheet" type="number" step="0.01" min="0" className="form-input" placeholder="180.00" required />
+              </div>
+              <div className="form-field">
+                <label htmlFor="minStockLevel" className="form-label">MIN STOCK</label>
+                <input id="minStockLevel" name="minStockLevel" type="number" step="1" min="0" className="form-input" defaultValue="0" />
+              </div>
+              <div className="form-field">
+                <label htmlFor="currentStockLevel" className="form-label">CURRENT STOCK</label>
+                <input id="currentStockLevel" name="currentStockLevel" type="number" step="1" min="0" className="form-input" defaultValue="0" />
+              </div>
+            </div>
+            <div style={{ display: "flex", gap: "0.75rem", marginTop: "0.5rem" }}>
+              <button type="submit" className="submit-btn" disabled={loading} style={{ flex: 1 }}>
+                {loading ? "SAVING…" : "SAVE MATERIAL"}
+              </button>
+              <Link href="/materials">
+                <button type="button" style={{
+                  padding: "0.7rem 1.25rem", background: "none",
+                  border: "1px solid rgba(245,182,30,0.18)", borderRadius: "0.5rem",
+                  color: "rgba(240,237,230,0.45)", fontSize: "0.72rem", letterSpacing: "0.08em", cursor: "pointer",
+                }}>CANCEL</button>
+              </Link>
+            </div>
+          </form>
+        </div>
+      </div>
+    </>
+  );
+}

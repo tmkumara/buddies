@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, UserRole } from "@prisma/client";
 import { PrismaMariaDb } from "@prisma/adapter-mariadb";
 import bcrypt from "bcryptjs";
 
@@ -26,14 +26,14 @@ async function main() {
     },
     update: {
       passwordHash,
-      role: "ADMIN",
+      role: UserRole.ADMIN,
       active: true,
       mustChangePassword: false,
     },
     create: {
       username: "admin",
       passwordHash,
-      role: "ADMIN",
+      role: UserRole.ADMIN,
       active: true,
       mustChangePassword: false,
     },

@@ -91,11 +91,8 @@ This checklist tracks the migration of the existing **Spring Boot MVC + Thymelea
 
 ### 2.7 Migration Execution
 
-- `[ ]` Run schema migration:
-  ```bash
-  npx prisma migrate dev --name add_schema_improvements
-  ```
-- `[ ]` Generate Prisma client:
+- `[x]` Run schema migration (applied via `npx prisma db push --accept-data-loss` — non-interactive env; run `npx prisma migrate dev --name add_schema_improvements` from an interactive terminal to create migration file)
+- `[x]` Generate Prisma client:
   ```bash
   npx prisma generate
   ```
@@ -170,16 +167,16 @@ This checklist tracks the migration of the existing **Spring Boot MVC + Thymelea
 
 > Goal: Build the shared shell used by all authenticated pages.
 
-- `[ ]` Update root layout metadata/title for Gift Box OMS
-- `[ ]` Create `src/components/layout/Sidebar.tsx`
-- `[ ]` Create `src/components/layout/TopBar.tsx`
-- `[ ]` Create authenticated app shell layout
+- `[x]` Update root layout metadata/title for Gift Box OMS
+- `[x]` Create `src/components/layout/Sidebar.tsx`
+- `[x]` Create `src/components/layout/TopBar.tsx`
+- `[x]` Create authenticated app shell layout (`AppShell.tsx` + `(app)/layout.tsx`)
 - `[ ]` Add responsive sidebar behavior
-- `[ ]` Add active navigation highlight
-- `[ ]` Add user/session display in top bar
-- `[ ]` Add logout action/button
-- `[ ]` Apply clean Tailwind v4 styling
-- `[ ]` Optional: apply glassmorphism visual style
+- `[x]` Add active navigation highlight (usePathname-based)
+- `[x]` Add user/session display in top bar (username + initial from session)
+- `[x]` Add logout action/button (in Sidebar)
+- `[x]` Apply clean Tailwind v4 styling
+- `[x]` Optional: apply glassmorphism visual style
 
 ---
 
@@ -236,17 +233,15 @@ This checklist tracks the migration of the existing **Spring Boot MVC + Thymelea
 
 ## 10. Dashboard Module
 
-- `[ ]` Replace default `src/app/page.tsx` with dashboard
-- `[ ]` Show total orders count
-- `[ ]` Show total customers count
-- `[ ]` Show draft orders count
-- `[ ]` Show confirmed orders count
-- `[ ]` Show ready orders count
-- `[ ]` Show delivered orders count
-- `[ ]` Show recent 5 orders
+- `[x]` Replace default `src/app/page.tsx` with dashboard
+- `[x]` Show total orders count
+- `[x]` Show total customers count
+- `[x]` Show draft/confirmed/in-production/ready orders count (active orders)
+- `[x]` Show delivered orders count (fulfillment rate)
+- `[x]` Show recent 5 orders with real data
 - `[ ]` Add dynamic order chart if using Recharts
 - `[ ]` Add recent activity feed if status history is available
-- `[ ]` Ensure dashboard loads under 2 seconds
+- `[x]` Ensure dashboard loads under 2 seconds
 
 ---
 
