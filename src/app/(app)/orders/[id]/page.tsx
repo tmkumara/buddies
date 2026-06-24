@@ -1,0 +1,198 @@
+import { requireAuth } from "@/lib/auth-guards";
+import prisma from "@/lib/prisma";
+import { notFound } from "next/navigation";
+import TopBar from "@/components/layout/TopBar";
+import Link from "next/link";
+import { FileText } from "lucide-react";
+import { STATUS_LABELS, STATUS_CSS, type OrderStatusKey } from "@/lib/utils/status-transitions";
+import OrderStatusForm from "./OrderStatusForm";
+import OrderDetailsForm from "./OrderDetailsForm";
+
+export default async function OrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  await requireAuth();
+  const { id } = await params;
+
+  const order = await prisma.order.findUnique({
+    where: { id: Number(id) },
+    include: {
+      customer: true,
+      items:    { orderBy: { id: "asc" } },
+      statusHistory: {
+        orderBy: { changedAt: "desc" },
+        include: { changedBy: { select: { username: true } } },
+      },
+    },
+  });
+
+  if (!order) notFound();
+
+  const totalAmount    = Number(order.totalAmount);
+  const discountAmount = Number(order.discountAmount);
+  const netAmount      = Number(order.netAmount);
+  const discountPct    = totalAmount > 0 ? Math.round((discountAmount / totalAmount) * 100 * 100) / 100 : 0;
+
+  const deliveryDate = order.deliveryDate?.toISOString().split("T")[0] ?? null;
+  const orderDate    = order.orderDate.toISOString().split("T")[0];
+
+  const section: React.CSSProperties = {
+    borderTop: "1px solid rgba(245,182,30,0.08)", paddingTop: "1.25rem", marginTop: "1.25rem",
+  };
+  const metaLabel: React.CSSProperties = { fontSize: "0.62rem", letterSpacing: "0.08em", color: "rgba(240,237,230,0.3)", marginBottom: "0.25rem" };
+  const metaValue: React.CSSProperties = { fontSize: "0.88rem", color: "#F0EDE6", fontWeight: 500 };
+
+  return (
+    <>
+      <TopBar title={order.orderNo} />
+
+      <div style={{ padding: "1.5rem 1.75rem", maxWidth: "900px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "1.25rem" }}>
+          <Link href="/orders" className="nav-link" style={{ fontSize: "0.68rem" }}>← Orders</Link>
+          <span style={{ color: "rgba(240,237,230,0.2)", fontSize: "0.7rem" }}>/</span>
+          <span style={{ fontSize: "0.78rem", color: "rgba(240,237,230,0.5)" }}>{order.orderNo}</span>
+        </div>
+
+        <div className="content-card">
+          {/* ── Order Header ── */}
+          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "1rem", marginBottom: "1.25rem" }}>
+            <div>
+              <h2 style={{ fontSize: "1.15rem", fontWeight: 700, color: "#F5B61E", letterSpacing: "0.04em" }}>
+                {order.orderNo}
+              </h2>
+              <span className={`status-pill ${STATUS_CSS[order.status as OrderStatusKey]}`} style={{ marginTop: "0.4rem", display: "inline-block" }}>
+                {STATUS_LABELS[order.status as OrderStatusKey]?.toUpperCase()}
+              </span>
+            </div>
+            <Link href={`/orders/${order.id}/invoice`} target="_blank">
+              <button style={{
+                display: "flex", alignItems: "center", gap: "0.4rem",
+                background: "rgba(245,182,30,0.07)", border: "1px solid rgba(245,182,30,0.2)",
+                borderRadius: "0.5rem", padding: "0.5rem 0.9rem",
+                color: "#F5B61E", fontSize: "0.68rem", letterSpacing: "0.07em", cursor: "pointer",
+              }}>
+                <FileText size={13} /> INVOICE
+              </button>
+            </Link>
+          </div>
+
+          {/* ── Meta Info ── */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: "1rem", marginBottom: "1.25rem" }}>
+            <div>
+              <p style={metaLabel}>CUSTOMER</p>
+              <p style={{ ...metaValue, color: "#F0EDE6", fontWeight: 600 }}>{order.customer.name}</p>
+              <p style={{ fontSize: "0.72rem", color: "rgba(240,237,230,0.45)" }}>{order.customer.phone}</p>
+            </div>
+            <div>
+              <p style={metaLabel}>ORDER DATE</p>
+              <p style={metaValue}>{orderDate}</p>
+            </div>
+            <div>
+              <p style={metaLabel}>DELIVERY DATE</p>
+              <p style={{ ...metaValue, color: deliveryDate ? "#F0EDE6" : "rgba(240,237,230,0.25)" }}>{deliveryDate ?? "Not set"}</p>
+            </div>
+            {order.remarks && (
+              <div style={{ gridColumn: "1 / -1" }}>
+                <p style={metaLabel}>REMARKS</p>
+                <p style={{ ...metaValue, fontSize: "0.82rem", color: "rgba(240,237,230,0.7)", whiteSpace: "pre-line" }}>{order.remarks}</p>
+              </div>
+            )}
+          </div>
+
+          {/* ── Items Table ── */}
+          <div style={section}>
+            <h3 style={{ fontSize: "0.75rem", letterSpacing: "0.1em", color: "rgba(240,237,230,0.4)", marginBottom: "0.9rem" }}>
+              ORDER ITEMS
+            </h3>
+            <div style={{ overflowX: "auto" }}>
+              <table className="orders-table">
+                <thead>
+                  <tr>
+                    <th>CODE</th>
+                    <th>DESIGN NAME</th>
+                    <th style={{ textAlign: "right" }}>QTY</th>
+                    <th style={{ textAlign: "right" }}>UNIT PRICE</th>
+                    <th style={{ textAlign: "right" }}>LINE TOTAL</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {order.items.map((item) => (
+                    <tr key={item.id}>
+                      <td style={{ fontWeight: 700, color: "#F5B61E", fontSize: "0.72rem", letterSpacing: "0.06em" }}>{item.designCode}</td>
+                      <td style={{ color: "#F0EDE6" }}>{item.designName}</td>
+                      <td style={{ textAlign: "right", color: "rgba(240,237,230,0.7)" }}>{item.quantity.toLocaleString()}</td>
+                      <td style={{ textAlign: "right", color: "rgba(240,237,230,0.7)" }}>Rs. {Number(item.unitPrice).toFixed(2)}</td>
+                      <td style={{ textAlign: "right", fontWeight: 600, color: "#F0EDE6" }}>Rs. {Number(item.lineTotal).toFixed(2)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Totals */}
+            <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "1rem" }}>
+              <div style={{ minWidth: "240px", display: "flex", flexDirection: "column", gap: "0.4rem" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.82rem", color: "rgba(240,237,230,0.55)" }}>
+                  <span>Total</span>
+                  <span>Rs. {totalAmount.toFixed(2)}</span>
+                </div>
+                {discountAmount > 0 && (
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.82rem", color: "#F87171" }}>
+                    <span>Discount ({discountPct}%)</span>
+                    <span>− Rs. {discountAmount.toFixed(2)}</span>
+                  </div>
+                )}
+                <div style={{
+                  display: "flex", justifyContent: "space-between",
+                  fontSize: "1rem", fontWeight: 700, color: "#F5B61E",
+                  borderTop: "1px solid rgba(245,182,30,0.15)", paddingTop: "0.45rem", marginTop: "0.2rem",
+                }}>
+                  <span>Net Amount</span>
+                  <span>Rs. {netAmount.toFixed(2)}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* ── Status Update ── */}
+          <div style={section}>
+            <OrderStatusForm orderId={order.id} currentStatus={order.status as OrderStatusKey} />
+          </div>
+
+          {/* ── Details Edit ── */}
+          <div style={section}>
+            <OrderDetailsForm orderId={order.id} deliveryDate={deliveryDate} remarks={order.remarks} />
+          </div>
+
+          {/* ── Status History ── */}
+          {order.statusHistory.length > 0 && (
+            <div style={section}>
+              <h3 style={{ fontSize: "0.75rem", letterSpacing: "0.1em", color: "rgba(240,237,230,0.4)", marginBottom: "0.9rem" }}>
+                STATUS HISTORY
+              </h3>
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                {order.statusHistory.map((h) => (
+                  <div key={h.id} style={{
+                    display: "flex", alignItems: "center", gap: "0.75rem",
+                    fontSize: "0.75rem", color: "rgba(240,237,230,0.5)",
+                  }}>
+                    <span style={{ color: "rgba(240,237,230,0.3)", flexShrink: 0 }}>
+                      {h.changedAt.toISOString().replace("T", " ").slice(0, 16)}
+                    </span>
+                    <span className={`status-pill ${STATUS_CSS[h.fromStatus as OrderStatusKey]}`} style={{ fontSize: "0.55rem" }}>
+                      {STATUS_LABELS[h.fromStatus as OrderStatusKey]}
+                    </span>
+                    <span style={{ color: "rgba(240,237,230,0.25)" }}>→</span>
+                    <span className={`status-pill ${STATUS_CSS[h.toStatus as OrderStatusKey]}`} style={{ fontSize: "0.55rem" }}>
+                      {STATUS_LABELS[h.toStatus as OrderStatusKey]}
+                    </span>
+                    {h.changedBy && <span style={{ color: "rgba(240,237,230,0.3)" }}>by {h.changedBy.username}</span>}
+                    {h.note && <span style={{ color: "rgba(240,237,230,0.45)", fontStyle: "italic" }}>— {h.note}</span>}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </>
+  );
+}
