@@ -18,16 +18,18 @@
 
 SET FOREIGN_KEY_CHECKS = 0;
 
--- Clear in reverse-dependency order so seed data doesn't cause conflicts
-TRUNCATE TABLE order_status_history;
-TRUNCATE TABLE order_item;
-TRUNCATE TABLE customer_order;
-TRUNCATE TABLE order_seq;
-TRUNCATE TABLE box_design;
-TRUNCATE TABLE customer;
-TRUNCATE TABLE design_type;
-TRUNCATE TABLE material;
-TRUNCATE TABLE users;
+-- Clear in reverse-dependency order so seed data doesn't cause conflicts.
+-- Using DELETE FROM instead of TRUNCATE because TRUNCATE ignores
+-- FOREIGN_KEY_CHECKS=0 in phpMyAdmin (each statement runs in its own session).
+DELETE FROM order_status_history;
+DELETE FROM order_item;
+DELETE FROM customer_order;
+DELETE FROM order_seq;
+DELETE FROM box_design;
+DELETE FROM customer;
+DELETE FROM design_type;
+DELETE FROM material;
+DELETE FROM users;
 
 -- ── 1. USERS ─────────────────────────────────────────────────
 -- Preserves the real bcrypt password hash from production.
