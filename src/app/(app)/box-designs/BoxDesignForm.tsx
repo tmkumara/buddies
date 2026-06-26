@@ -4,7 +4,7 @@ import { useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createBoxDesign, updateBoxDesign } from "@/actions/box-designs";
-import Select from "@/components/ui/Select";
+import Combobox from "@/components/ui/Combobox";
 
 interface SelectOption { id: number; code: string; name: string; }
 
@@ -65,7 +65,7 @@ export default function BoxDesignForm({ designTypes, materials, existing }: Prop
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
             <div className="form-field">
               <label className="form-label">DESIGN TYPE *</label>
-              <Select
+              <Combobox
                 name="designTypeId"
                 placeholder="— Select Design Type —"
                 defaultValue={existing?.designTypeId}
@@ -75,7 +75,7 @@ export default function BoxDesignForm({ designTypes, materials, existing }: Prop
             </div>
             <div className="form-field">
               <label className="form-label">MATERIAL *</label>
-              <Select
+              <Combobox
                 name="materialId"
                 placeholder="— Select Material —"
                 defaultValue={existing?.materialId}
