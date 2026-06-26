@@ -1,4 +1,8 @@
-export function calculateRawArea(cutLengthCm: number, cutWidthCm: number): number {
+export function calculateRawArea(
+  cutLengthCm: number | null | undefined,
+  cutWidthCm: number | null | undefined,
+): number | null {
+  if (cutLengthCm == null || cutWidthCm == null) return null;
   return cutLengthCm * cutWidthCm;
 }
 
