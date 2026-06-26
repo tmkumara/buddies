@@ -41,7 +41,17 @@ export async function createPayment(orderId: number, formData: FormData) {
 
 export async function deletePayment(paymentId: number, orderId: number) {
   await requireAuth();
-  await prisma.payment.delete({ where: { id: paymentId } });
+
+  const order = await prisma.order.findUnique({
+    where: { id: orderId },
+    select: { status: true },
+  });
+  if (!order) return { error: "Order not found" };
+  if (["DELIVERED", "CANCELLED"].includes(order.status)) {
+    return { error: "Cannot delete payments on a completed order" };
+  }
+
+  await prisma.payment.delete({ where: { id: paymentId, orderId } });
   revalidatePath(`/orders/${orderId}`);
   return { success: true as const };
 }
