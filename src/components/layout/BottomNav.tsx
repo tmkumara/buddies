@@ -44,6 +44,7 @@ export default function BottomNav() {
             <Link
               key={href}
               href={href}
+              aria-current={isActive ? "page" : undefined}
               style={{
                 flex: 1,
                 display: "flex",
@@ -56,6 +57,7 @@ export default function BottomNav() {
                 color: isActive ? "#F5B61E" : "rgba(240,237,230,0.35)",
                 transition: "color 0.15s",
                 minWidth: 0,
+                position: "relative",
               }}
             >
               <Icon
