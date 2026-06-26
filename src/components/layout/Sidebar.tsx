@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
 import {
-  LayoutDashboard, Package, Users, BoxSelect, Archive, UserCog, Factory,
+  LayoutDashboard, Package, Users, BoxSelect, Archive, UserCog, Factory, Radio, FileText,
 } from "lucide-react";
 
 const mainNav = [
@@ -21,7 +21,9 @@ const catalogNav = [
 ];
 
 const adminNav = [
-  { label: "Users", href: "/users", icon: UserCog },
+  { label: "Users",        href: "/users",                 icon: UserCog  },
+  { label: "Lead Sources", href: "/settings/lead-sources", icon: Radio    },
+  { label: "Reports",      href: "/reports",               icon: FileText },
 ];
 
 export default function Sidebar() {
