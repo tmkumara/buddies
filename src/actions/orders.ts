@@ -1,5 +1,6 @@
 "use server";
 
+import crypto from "crypto";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireAuth } from "@/lib/auth-guards";
@@ -21,8 +22,9 @@ export async function createOrder(formData: FormData) {
     customerId:      formData.get("customerId"),
     orderDate:       formData.get("orderDate"),
     deliveryDate:    (formData.get("deliveryDate") as string) || undefined,
-    discountPercent: formData.get("discountPercent") || "0",
+    discountPercent: (formData.get("discountPercent") as string) || undefined,
     remarks:         (formData.get("remarks") as string) || undefined,
+    leadSourceId:    (formData.get("leadSourceId") as string) || undefined,
   });
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Validation error" };
 
@@ -63,7 +65,8 @@ export async function createOrder(formData: FormData) {
     }
   }
 
-  const totals = calculateOrderTotals(items, parsed.data.discountPercent);
+  const totals = calculateOrderTotals(items, parsed.data.discountPercent ?? null);
+  const publicToken = crypto.randomBytes(32).toString("hex");
 
   // Generate order number atomically before main transaction
   const orderNo = await generateOrderNo();
@@ -81,6 +84,9 @@ export async function createOrder(formData: FormData) {
         discountAmount: totals.discountAmount,
         netAmount:      totals.netAmount,
         remarks:        parsed.data.remarks ?? null,
+        discountPercent: totals.discountPercent,
+        leadSourceId:    parsed.data.leadSourceId ?? null,
+        publicToken,
         items: {
           create: items.map((item) => {
             const bd = bdMap.get(item.boxDesignId)!;
@@ -148,16 +154,20 @@ export async function updateOrderDetails(orderId: number, formData: FormData) {
   await requireAuth();
 
   const parsed = updateOrderDetailsSchema.safeParse({
-    deliveryDate: (formData.get("deliveryDate") as string) || undefined,
-    remarks:      (formData.get("remarks") as string) || undefined,
+    deliveryDate:    (formData.get("deliveryDate") as string) || undefined,
+    remarks:         (formData.get("remarks") as string) || undefined,
+    discountPercent: (formData.get("discountPercent") as string) || undefined,
+    leadSourceId:    (formData.get("leadSourceId") as string) || undefined,
   });
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Validation error" };
 
   await prisma.order.update({
     where: { id: orderId },
     data: {
-      deliveryDate: parsed.data.deliveryDate ? new Date(parsed.data.deliveryDate) : null,
-      remarks:      parsed.data.remarks ?? null,
+      deliveryDate:    parsed.data.deliveryDate ? new Date(parsed.data.deliveryDate) : null,
+      remarks:         parsed.data.remarks ?? null,
+      discountPercent: parsed.data.discountPercent ?? undefined,
+      leadSourceId:    parsed.data.leadSourceId ?? undefined,
     },
   });
 
