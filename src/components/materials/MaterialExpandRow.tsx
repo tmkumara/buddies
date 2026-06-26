@@ -3,14 +3,18 @@
 import React, { useState, useTransition } from "react";
 import { Pencil, X } from "lucide-react";
 import { MaterialStatus } from "@prisma/client";
-import { updateMaterialStatus, updateMaterialStock } from "@/actions/materials";
+import { updateMaterialStatus } from "@/actions/materials";
+import StockAdjustmentSlideOver from "./StockAdjustmentSlideOver";
+import StockHistoryTable, { StockHistoryEntry } from "./StockHistoryTable";
 
 interface Props {
   material: {
     id: number;
+    name: string;
     status: MaterialStatus;
     currentStockLevel: number;
     minStockLevel: number;
+    stockAdjustments: StockHistoryEntry[];
   };
   onFullEdit: () => void;
   onClose: () => void;
@@ -19,19 +23,13 @@ interface Props {
 const STATUSES: MaterialStatus[] = ["PENDING", "ACTIVE", "INACTIVE"];
 
 export default function MaterialExpandRow({ material, onFullEdit, onClose }: Props) {
-  const [stock, setStock] = useState(material.currentStockLevel);
+  const [localStock, setLocalStock] = useState(material.currentStockLevel);
+  const [stockSlideOpen, setStockSlideOpen] = useState(false);
   const [optimisticStatus, setOptimisticStatus] = useState<MaterialStatus>(material.status);
-  const [stockPending, startStock] = useTransition();
   const [statusPending, startStatus] = useTransition();
-  const isDirty = stock !== material.currentStockLevel;
 
   const min = material.minStockLevel;
-  const pct = min > 0 ? Math.min((stock / min) * 100, 100) : 100;
-  const barColor: "green" | "amber" | "red" = pct >= 100 ? "green" : pct >= 50 ? "amber" : "red";
-
-  function handleSaveStock() {
-    startStock(async () => { await updateMaterialStock(material.id, stock); });
-  }
+  const lowStock = material.status === "ACTIVE" && min > 0 && localStock <= min;
 
   function handleStatus(s: MaterialStatus) {
     if (s === optimisticStatus) return;
@@ -55,62 +53,41 @@ export default function MaterialExpandRow({ material, onFullEdit, onClose }: Pro
     <div>
       {/* Two-column body */}
       <div className="expand-row" style={{ padding: 0 }}>
-        {/* Left column: Stock Control */}
+        {/* Left column: Stock */}
         <div style={{ padding: "1rem 1.25rem", borderRight: "1px solid rgba(245,182,30,0.08)" }}>
-          <p style={sectionLabel}>Stock Control</p>
-          <div style={{ display: "flex", alignItems: "center", gap: "0.45rem", marginBottom: "0.5rem" }}>
-            <button type="button" className="nudge-btn" onClick={() => setStock((v) => Math.max(0, v - 1))}>−</button>
-            <input
-              type="number"
-              min="0"
-              value={stock}
-              onChange={(e) => setStock(Math.max(0, Number(e.target.value)))}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.6rem" }}>
+            <p style={{ ...sectionLabel, marginBottom: 0 }}>Stock</p>
+            <button
+              type="button"
+              onClick={() => setStockSlideOpen(true)}
               style={{
-                width: "68px",
-                background: "rgba(255,255,255,0.05)",
+                display: "flex",
+                alignItems: "center",
+                gap: "0.3rem",
+                background: "rgba(245,182,30,0.07)",
                 border: "1px solid rgba(245,182,30,0.2)",
-                borderRadius: "0.4rem",
-                padding: "0.3rem 0.4rem",
-                color: "#F0EDE6",
-                fontSize: "0.875rem",
-                textAlign: "center",
-                outline: "none",
+                borderRadius: "0.35rem",
+                padding: "0.25rem 0.65rem",
+                color: "#F5B61E",
+                fontSize: "0.62rem",
+                letterSpacing: "0.07em",
+                cursor: "pointer",
                 fontFamily: "var(--font-jakarta, 'Plus Jakarta Sans', sans-serif)",
               }}
-            />
-            <button type="button" className="nudge-btn" onClick={() => setStock((v) => v + 1)}>+</button>
-            {isDirty && (
-              <button
-                type="button"
-                onClick={handleSaveStock}
-                disabled={stockPending}
-                style={{
-                  padding: "0.3rem 0.7rem",
-                  background: "rgba(245,182,30,0.12)",
-                  border: "1px solid rgba(245,182,30,0.3)",
-                  borderRadius: "0.4rem",
-                  color: "#F5B61E",
-                  fontSize: "0.6rem",
-                  letterSpacing: "0.08em",
-                  cursor: "pointer",
-                  opacity: stockPending ? 0.55 : 1,
-                  fontFamily: "var(--font-jakarta, 'Plus Jakarta Sans', sans-serif)",
-                }}
-              >
-                {stockPending ? "SAVING…" : "SAVE"}
-              </button>
-            )}
+            >
+              + Adjust Stock
+            </button>
           </div>
-          {min > 0 && (
-            <div>
-              <div className="stock-bar-track">
-                <div className={`stock-bar-fill ${barColor}`} style={{ width: `${pct}%` }} />
-              </div>
-              <p style={{ fontSize: "0.56rem", color: "rgba(240,237,230,0.28)", marginTop: "0.3rem" }}>
-                Min: {min} · {Math.round(pct)}% of minimum
-              </p>
-            </div>
-          )}
+
+          <p style={{ fontSize: "1.15rem", fontWeight: 700, color: lowStock ? "#F87171" : "#F5B61E", margin: "0 0 0.4rem" }}>
+            {localStock}{" "}
+            <span style={{ fontSize: "0.65rem", color: "rgba(240,237,230,0.35)", fontWeight: 400 }}>sheets on hand</span>
+            {lowStock && (
+              <span style={{ fontSize: "0.62rem", color: "#F87171", marginLeft: "0.5rem" }}>⚠ LOW STOCK</span>
+            )}
+          </p>
+
+          <StockHistoryTable entries={material.stockAdjustments} />
         </div>
 
         {/* Right column: Status */}
@@ -178,6 +155,15 @@ export default function MaterialExpandRow({ material, onFullEdit, onClose }: Pro
           <X size={10} /> CLOSE
         </button>
       </div>
+
+      <StockAdjustmentSlideOver
+        materialId={material.id}
+        materialName={material.name}
+        currentStock={localStock}
+        isOpen={stockSlideOpen}
+        onClose={() => setStockSlideOpen(false)}
+        onSaved={(newStock) => setLocalStock(newStock)}
+      />
     </div>
   );
 }

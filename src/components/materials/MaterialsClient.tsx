@@ -202,9 +202,16 @@ export default function MaterialsClient({
                         <td style={{ color: "rgba(240,237,230,0.68)" }}>Rs. {m.unitPrice.toFixed(2)}</td>
                         <td>
                           <div style={{ display: "flex", flexDirection: "column", gap: "0.2rem", minWidth: "56px" }}>
-                            <span style={{ color: lowStock ? "#F87171" : "rgba(240,237,230,0.6)", fontSize: "0.76rem", fontWeight: 600 }}>
-                              {m.currentStockLevel}
-                            </span>
+                            <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
+                              <span style={{ color: lowStock ? "#F87171" : "rgba(240,237,230,0.6)", fontSize: "0.76rem", fontWeight: 600 }}>
+                                {m.currentStockLevel}
+                              </span>
+                              {lowStock && (
+                                <span style={{ fontSize: "0.52rem", color: "#F87171", background: "rgba(248,113,113,0.1)", padding: "0.1rem 0.35rem", borderRadius: "0.2rem", border: "1px solid rgba(248,113,113,0.2)", letterSpacing: "0.06em", fontWeight: 700 }}>
+                                  LOW
+                                </span>
+                              )}
+                            </div>
                             <div className="stock-bar-track">
                               <div style={{ height: "100%", width: `${pct}%`, background: barColor, borderRadius: "2px", transition: "width 0.3s ease" }} />
                             </div>

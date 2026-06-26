@@ -31,7 +31,26 @@ export default async function MaterialsPage({
 
   const [raw, filteredTotal, totalAll, totalActive, totalPending, lowStockResult] =
     await Promise.all([
-      prisma.material.findMany({ where, skip, take: size, orderBy: { code: "asc" } }),
+      prisma.material.findMany({
+        where,
+        skip,
+        take: size,
+        orderBy: { code: "asc" },
+        include: {
+          stockAdjustments: {
+            orderBy: { changedAt: "desc" },
+            take: 20,
+            select: {
+              id: true,
+              quantityChange: true,
+              reason: true,
+              changedAt: true,
+              changedBy: { select: { username: true } },
+              order: { select: { orderNo: true } },
+            },
+          },
+        },
+      }),
       prisma.material.count({ where }),
       prisma.material.count(),
       prisma.material.count({ where: { status: "ACTIVE" } }),
@@ -58,6 +77,14 @@ export default async function MaterialsPage({
     minStockLevel:     Number(m.minStockLevel),
     currentStockLevel: Number(m.currentStockLevel),
     status:            m.status as MaterialStatus,
+    stockAdjustments:  m.stockAdjustments.map((a) => ({
+      id:             a.id,
+      quantityChange: Number(a.quantityChange),
+      reason:         a.reason ?? "",
+      changedAt:      a.changedAt.toISOString(),
+      changedBy:      { username: a.changedBy?.username ?? "" },
+      order:          a.order ? { orderNo: a.order.orderNo } : null,
+    })),
   }));
 
   return (

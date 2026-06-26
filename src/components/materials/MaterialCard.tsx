@@ -4,6 +4,7 @@ import { useState } from "react";
 import { ChevronRight } from "lucide-react";
 import { MaterialStatus } from "@prisma/client";
 import MaterialExpandRow from "./MaterialExpandRow";
+import { StockHistoryEntry } from "./StockHistoryTable";
 
 export interface MaterialRow {
   id: number; code: string; name: string; gsm: number;
@@ -12,6 +13,7 @@ export interface MaterialRow {
   costPerSheet: number; unitPrice: number;
   minStockLevel: number; currentStockLevel: number;
   status: MaterialStatus;
+  stockAdjustments: StockHistoryEntry[];
 }
 
 const STATUS_PILL: Record<MaterialStatus, string> = {
