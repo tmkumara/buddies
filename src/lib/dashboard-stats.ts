@@ -40,7 +40,12 @@ export async function getDashboardStats(dateFrom?: Date, dateTo?: Date): Promise
       where: { order: { ...dateFilter, status: { not: "CANCELLED" } } },
       select: { quantity: true, lineTotal: true, boxDesignId: true, designName: true, designCode: true },
     }),
-    prisma.material.findMany({ select: { id: true, code: true, name: true, currentStockLevel: true }, orderBy: { currentStockLevel: "asc" }, take: 5 }),
+    prisma.material.findMany({
+      where: { currentStockLevel: { lte: 20 }, status: { not: "INACTIVE" } },
+      select: { id: true, code: true, name: true, currentStockLevel: true },
+      orderBy: { currentStockLevel: "asc" },
+      take: 10,
+    }),
     prisma.order.findMany({
       where: { status: { not: "CANCELLED" } },
       orderBy: { orderDate: "desc" },
@@ -98,13 +103,11 @@ export async function getDashboardStats(dateFrom?: Date, dateTo?: Date): Promise
     .map((d) => ({ ...d, totalRevenue: Math.round(d.totalRevenue) }));
 
   // Low stock (threshold ≤ 20)
-  const lowStockMaterials = materials
-    .filter((m) => Number(m.currentStockLevel) <= 20)
-    .map((m) => ({ ...m, currentStockLevel: Number(m.currentStockLevel) }));
+  const lowStockMaterials = materials.map((m) => ({ ...m, currentStockLevel: Number(m.currentStockLevel) }));
 
   return {
     totalOrders,
-    totalRevenue:     Math.round(Number(revenueAgg._sum.netAmount) ?? 0),
+    totalRevenue:     Math.round(Number(revenueAgg._sum.netAmount ?? 0)),
     totalCustomers,
     ordersInProgress,
     revenueByMonth,
