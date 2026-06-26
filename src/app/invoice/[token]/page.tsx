@@ -11,10 +11,10 @@ export async function generateMetadata({ params }: { params: Promise<{ token: st
 }
 
 const COMPANY = {
-  name:    "Buddies Gift Box",
-  tagline: "Premium custom packaging solutions",
-  phone:   "+94 77 XXX XXXX",
-  email:   "info@buddiesgiftbox.lk",
+  name:    "Buddies",
+  tagline: "Your Vision, Our Mission",
+  phone:   "0783085081 / 0707490585",
+  email:   "hello.buddieslk@gmail.com",
 };
 
 const METHOD_LABEL: Record<string, string> = {
