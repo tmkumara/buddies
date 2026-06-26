@@ -47,7 +47,7 @@ export default function CustomerExpandRow({ customer, onFullEdit, onClose }: Pro
   const [orders, setOrders] = useState<RecentOrder[] | null>(null);
 
   useEffect(() => {
-    getCustomerRecentOrders(customer.id).then(setOrders);
+    getCustomerRecentOrders(customer.id).then(setOrders).catch(() => setOrders([]));
   }, [customer.id]);
 
   function formatDate(iso: string) {

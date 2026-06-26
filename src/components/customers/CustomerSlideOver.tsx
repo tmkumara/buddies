@@ -54,15 +54,6 @@ export default function CustomerSlideOver({ open, onClose, existing }: Props) {
 
   if (!open) return null;
 
-  const sectionLabel: React.CSSProperties = {
-    fontSize: "0.62rem",
-    letterSpacing: "0.1em",
-    color: "rgba(240,237,230,0.35)",
-    textTransform: "uppercase",
-    marginBottom: "0.75rem",
-    marginTop: "1.25rem",
-  };
-
   return (
     <>
       <div className="slide-over-backdrop" onClick={onClose} />
