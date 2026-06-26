@@ -11,6 +11,7 @@ import {
   updateOrderDetailsSchema,
 } from "@/lib/validations/order";
 import { generateOrderNo } from "@/lib/utils/order-no";
+import { deductStockForOrder } from "@/actions/stock";
 import { calculateOrderTotals, calculateLineTotal } from "@/lib/utils/calculations";
 import { isValidTransition, type OrderStatusKey } from "@/lib/utils/status-transitions";
 import { OrderStatus } from "@prisma/client";
@@ -144,6 +145,10 @@ export async function updateOrderStatus(
       },
     }),
   ]);
+
+  if (newStatus === "IN_PRODUCTION") {
+    await deductStockForOrder(orderId, Number(session.user.id));
+  }
 
   revalidatePath(`/orders/${orderId}`);
   revalidatePath("/orders");
