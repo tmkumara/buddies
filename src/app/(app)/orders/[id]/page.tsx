@@ -8,6 +8,7 @@ import { STATUS_LABELS, STATUS_CSS, type OrderStatusKey } from "@/lib/utils/stat
 import OrderStatusForm from "./OrderStatusForm";
 import OrderDetailsForm from "./OrderDetailsForm";
 import PaymentSection from "./PaymentSection";
+import WhatsAppShareButton from "./WhatsAppShareButton";
 
 export default async function OrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
   await requireAuth();
@@ -34,6 +35,8 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
     },
   });
 
+  // Ensure publicToken is available (it's a scalar field, automatically included)
+
   if (!order) notFound();
 
   const totalAmount    = Number(order.totalAmount);
@@ -50,6 +53,9 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
     amount:      Number(p.amount),
     paymentDate: p.paymentDate.toISOString().split("T")[0],
   }));
+
+  const totalPaid = payments.reduce((sum, p) => sum + p.amount, 0);
+  const balance   = netAmount - totalPaid;
 
   const deliveryDate = order.deliveryDate?.toISOString().split("T")[0] ?? null;
   const orderDate    = order.orderDate.toISOString().split("T")[0];
@@ -124,6 +130,13 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                   <FileText size={13} /> INVOICE
                 </button>
               </Link>
+              <WhatsAppShareButton
+                orderNo={order.orderNo}
+                customerName={order.customer.name}
+                netAmount={netAmount}
+                balance={balance}
+                publicToken={order.publicToken}
+              />
             </div>
           </div>
 
