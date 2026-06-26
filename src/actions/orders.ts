@@ -122,12 +122,30 @@ export async function updateOrderStatus(
 
   const order = await prisma.order.findUnique({
     where: { id: orderId },
-    select: { status: true },
+    select: {
+      status: true,
+      netAmount: true,
+      payments: { select: { amount: true } },
+    },
   });
   if (!order) return { error: "Order not found" };
 
   if (!isValidTransition(order.status as OrderStatusKey, newStatus as OrderStatusKey)) {
     return { error: `Cannot transition from ${order.status} to ${newStatus}` };
+  }
+
+  // Payment gate: DRAFT → CONFIRMED requires at least one payment
+  if (newStatus === "CONFIRMED" && order.payments.length === 0) {
+    return { error: "At least one payment must be recorded before confirming the order." };
+  }
+
+  // Payment gate: READY → DELIVERED requires full payment
+  if (newStatus === "DELIVERED") {
+    const totalPaid = order.payments.reduce((s, p) => s + Number(p.amount), 0);
+    const netAmount = Number(order.netAmount);
+    if (totalPaid < netAmount - 0.01) {
+      return { error: `Full payment required before delivery. Balance: Rs. ${(netAmount - totalPaid).toFixed(2)}` };
+    }
   }
 
   await prisma.$transaction([
@@ -146,13 +164,14 @@ export async function updateOrderStatus(
     }),
   ]);
 
+  revalidatePath(`/orders/${orderId}`);
+  revalidatePath("/orders");
+
   if (newStatus === "IN_PRODUCTION") {
     await deductStockForOrder(orderId, Number(session.user.id));
   }
 
-  revalidatePath(`/orders/${orderId}`);
-  revalidatePath("/orders");
-  return { success: true };
+  return { success: true as const };
 }
 
 export async function updateOrderDetails(orderId: number, formData: FormData) {
@@ -178,4 +197,88 @@ export async function updateOrderDetails(orderId: number, formData: FormData) {
 
   revalidatePath(`/orders/${orderId}`);
   return { success: true };
+}
+
+export async function updateOrderItems(orderId: number, formData: FormData) {
+  const session = await requireAuth();
+
+  const order = await prisma.order.findUnique({
+    where: { id: orderId },
+    select: { status: true },
+  });
+  if (!order) return { error: "Order not found" };
+
+  const editableStatuses = ["DRAFT", "CONFIRMED", "IN_PRODUCTION"];
+  if (!editableStatuses.includes(order.status)) {
+    return { error: "Order cannot be edited at this stage." };
+  }
+
+  let rawItems: unknown;
+  try { rawItems = JSON.parse((formData.get("itemsJson") as string) ?? "[]"); }
+  catch { return { error: "Invalid items data" }; }
+
+  if (!Array.isArray(rawItems) || rawItems.length === 0) {
+    return { error: "At least one order item is required" };
+  }
+
+  const items: { boxDesignId: number; quantity: number; unitPrice: number }[] = [];
+  for (const item of rawItems) {
+    const p = orderItemInputSchema.safeParse(item);
+    if (!p.success) return { error: p.error.issues[0]?.message ?? "Invalid item" };
+    items.push(p.data);
+  }
+
+  const boxDesignIds = [...new Set(items.map((i) => i.boxDesignId))];
+  const boxDesigns = await prisma.boxDesign.findMany({
+    where:  { id: { in: boxDesignIds }, active: true },
+    select: { id: true, name: true, code: true },
+  });
+  const bdMap = new Map(boxDesigns.map((bd) => [bd.id, bd]));
+  for (const item of items) {
+    if (!bdMap.has(item.boxDesignId)) return { error: `Box design ID ${item.boxDesignId} not found` };
+  }
+
+  // Read optional discount override from formData
+  const discountOverrideRaw = formData.get("discountPercent") as string | null;
+  const discountOverride = discountOverrideRaw ? parseFloat(discountOverrideRaw) : null;
+
+  const totals = calculateOrderTotals(items, discountOverride);
+
+  await prisma.$transaction([
+    prisma.orderItem.deleteMany({ where: { orderId } }),
+    prisma.order.update({
+      where: { id: orderId },
+      data: {
+        totalAmount:    totals.totalAmount,
+        discountAmount: totals.discountAmount,
+        netAmount:      totals.netAmount,
+        discountPercent: totals.discountPercent,
+        deliveryDate: formData.get("deliveryDate")
+          ? new Date(formData.get("deliveryDate") as string)
+          : null,
+        remarks: (formData.get("remarks") as string) || null,
+        leadSourceId: formData.get("leadSourceId")
+          ? Number(formData.get("leadSourceId"))
+          : null,
+      },
+    }),
+    ...items.map((item) => {
+      const bd = bdMap.get(item.boxDesignId)!;
+      return prisma.orderItem.create({
+        data: {
+          orderId,
+          boxDesignId: item.boxDesignId,
+          designName:  bd.name,
+          designCode:  bd.code,
+          quantity:    item.quantity,
+          unitPrice:   item.unitPrice,
+          lineTotal:   calculateLineTotal(item.unitPrice, item.quantity),
+        },
+      });
+    }),
+  ]);
+
+  revalidatePath(`/orders/${orderId}`);
+  revalidatePath("/orders");
+  return { success: true as const };
 }
