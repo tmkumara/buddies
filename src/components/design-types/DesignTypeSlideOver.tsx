@@ -3,7 +3,6 @@
 import React from "react";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { ImageOff } from "lucide-react";
 import { createDesignType, updateDesignType } from "@/actions/design-types";
 
 export interface DesignTypeData {
@@ -272,14 +271,7 @@ export default function DesignTypeSlideOver({ open, onClose, existing }: Props) 
                 display: "flex", alignItems: "center", gap: "0.5rem",
               }}
             >
-              {isPending && (
-                <span style={{
-                  width: "14px", height: "14px", border: "2px solid rgba(0,0,0,0.3)",
-                  borderTopColor: "#000", borderRadius: "50%",
-                  animation: "spin 0.6s linear infinite", display: "inline-block",
-                }} />
-              )}
-              SAVE TYPE
+              {isPending ? "SAVING…" : "SAVE TYPE"}
             </button>
           </div>
         </form>
