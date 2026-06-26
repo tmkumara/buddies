@@ -3,6 +3,7 @@
 import React from "react";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { ImageOff, Upload, X } from "lucide-react";
 import { createDesignType, updateDesignType } from "@/actions/design-types";
 
 export interface DesignTypeData {
@@ -24,27 +25,47 @@ interface Props {
 export default function DesignTypeSlideOver({ open, onClose, existing }: Props) {
   const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState("");
   const [active, setActive] = useState(true);
   const [imageUrl, setImageUrl] = useState("");
-  const [imageVisible, setImageVisible] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState("");
 
   useEffect(() => {
     if (!open) return;
     setActive(existing?.active ?? true);
     setImageUrl(existing?.imageUrl ?? "");
-    setImageVisible(false);
+    setUploadError("");
     setError("");
   }, [open, existing?.id]);
 
-  // Show image preview when URL changes
-  useEffect(() => {
-    setImageVisible(!!imageUrl);
-  }, [imageUrl]);
+  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadError("");
+    setIsUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch("/api/upload/design-type-image", { method: "POST", body: fd });
+      const json = await res.json() as { path?: string; error?: string };
+      if (!res.ok || json.error) {
+        setUploadError(json.error ?? "Upload failed");
+      } else {
+        setImageUrl(json.path ?? "");
+      }
+    } catch {
+      setUploadError("Upload failed — check your connection");
+    } finally {
+      setIsUploading(false);
+      e.target.value = "";
+    }
+  }
 
   function handleBackdrop(e: React.MouseEvent<HTMLDivElement>) {
-    if (e.target === e.currentTarget) onClose();
+    if (e.target === e.currentTarget && !isUploading) onClose();
   }
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -192,27 +213,113 @@ export default function DesignTypeSlideOver({ open, onClose, existing }: Props) 
               <div style={{ fontSize: "0.65rem", letterSpacing: "0.1em", color: "var(--gold, #F5B61E)", fontWeight: 700, marginBottom: "0.75rem" }}>
                 IMAGE
               </div>
+
+              {/* Hidden input carries path to server action */}
+              <input type="hidden" name="imageUrl" value={imageUrl} />
+
+              {/* Hidden file input */}
               <input
-                name="imageUrl"
-                value={imageUrl}
-                onChange={(e) => setImageUrl(e.target.value)}
-                placeholder="https://… (optional)"
-                style={{
-                  width: "100%", background: "rgba(255,255,255,0.05)",
-                  border: "1px solid rgba(245,182,30,0.2)", borderRadius: "6px",
-                  padding: "0.5rem 0.75rem", color: "var(--text, #F0EDE6)",
-                  fontSize: "0.85rem", boxSizing: "border-box",
-                }}
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                onChange={handleFileChange}
+                style={{ display: "none" }}
               />
-              {imageVisible && (
-                <div style={{ marginTop: "0.75rem", borderRadius: "8px", overflow: "hidden", maxHeight: "120px" }}>
+
+              {imageUrl ? (
+                /* Preview with overlay controls */
+                <div style={{ position: "relative", borderRadius: "8px", overflow: "hidden", height: "140px" }}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={imageUrl}
                     alt="Preview"
-                    onError={() => setImageVisible(false)}
-                    style={{ width: "100%", height: "120px", objectFit: "cover", display: "block" }}
+                    style={{ width: "100%", height: "140px", objectFit: "cover", display: "block" }}
                   />
+                  {/* Overlay buttons */}
+                  <div style={{
+                    position: "absolute", inset: 0,
+                    background: "rgba(0,0,0,0.45)",
+                    display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem",
+                    opacity: 0,
+                    transition: "opacity 0.15s",
+                  }}
+                    onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.opacity = "1"; }}
+                    onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.opacity = "0"; }}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={isUploading}
+                      style={{
+                        background: "rgba(245,182,30,0.9)", border: "none", borderRadius: "6px",
+                        padding: "0.4rem 0.75rem", color: "#000", fontWeight: 700,
+                        fontSize: "0.72rem", cursor: "pointer", display: "flex", alignItems: "center", gap: "0.3rem",
+                      }}
+                    >
+                      <Upload size={12} /> Change
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setImageUrl("")}
+                      disabled={isUploading}
+                      style={{
+                        background: "rgba(248,113,113,0.9)", border: "none", borderRadius: "6px",
+                        padding: "0.4rem 0.75rem", color: "#fff", fontWeight: 700,
+                        fontSize: "0.72rem", cursor: "pointer", display: "flex", alignItems: "center", gap: "0.3rem",
+                      }}
+                    >
+                      <X size={12} /> Remove
+                    </button>
+                  </div>
+                  {isUploading && (
+                    <div style={{
+                      position: "absolute", inset: 0, background: "rgba(0,0,0,0.6)",
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      fontSize: "0.75rem", color: "#F0EDE6",
+                    }}>
+                      Uploading…
+                    </div>
+                  )}
+                </div>
+              ) : (
+                /* Empty state — click to pick */
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isUploading}
+                  style={{
+                    width: "100%", height: "100px",
+                    border: "1.5px dashed rgba(245,182,30,0.25)", borderRadius: "8px",
+                    background: "rgba(255,255,255,0.02)",
+                    display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+                    gap: "0.4rem", cursor: isUploading ? "wait" : "pointer",
+                    color: "rgba(240,237,230,0.35)", fontSize: "0.75rem",
+                    transition: "border-color 0.15s, background 0.15s",
+                  }}
+                  onMouseEnter={(e) => {
+                    (e.currentTarget as HTMLElement).style.borderColor = "rgba(245,182,30,0.5)";
+                    (e.currentTarget as HTMLElement).style.background = "rgba(245,182,30,0.04)";
+                  }}
+                  onMouseLeave={(e) => {
+                    (e.currentTarget as HTMLElement).style.borderColor = "rgba(245,182,30,0.25)";
+                    (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.02)";
+                  }}
+                >
+                  {isUploading ? (
+                    <span>Uploading…</span>
+                  ) : (
+                    <>
+                      <ImageOff size={20} style={{ opacity: 0.4 }} />
+                      <span>Click to select an image</span>
+                      <span style={{ fontSize: "0.65rem", opacity: 0.5 }}>JPEG · PNG · WebP · GIF · max 5 MB</span>
+                    </>
+                  )}
+                </button>
+              )}
+
+              {uploadError && (
+                <div style={{ marginTop: "0.4rem", fontSize: "0.75rem", color: "#F87171" }}>
+                  {uploadError}
                 </div>
               )}
             </div>
@@ -262,16 +369,17 @@ export default function DesignTypeSlideOver({ open, onClose, existing }: Props) 
             </button>
             <button
               type="submit"
-              disabled={isPending}
+              disabled={isPending || isUploading}
               style={{
                 background: "var(--gold, #F5B61E)", border: "none",
                 borderRadius: "6px", padding: "0.5rem 1.5rem",
-                color: "#000", fontWeight: 700, cursor: isPending ? "not-allowed" : "pointer",
-                fontSize: "0.85rem", opacity: isPending ? 0.7 : 1,
+                color: "#000", fontWeight: 700,
+                cursor: (isPending || isUploading) ? "not-allowed" : "pointer",
+                fontSize: "0.85rem", opacity: (isPending || isUploading) ? 0.7 : 1,
                 display: "flex", alignItems: "center", gap: "0.5rem",
               }}
             >
-              {isPending ? "SAVING…" : "SAVE TYPE"}
+              {isUploading ? "UPLOADING…" : isPending ? "SAVING…" : "SAVE TYPE"}
             </button>
           </div>
         </form>
