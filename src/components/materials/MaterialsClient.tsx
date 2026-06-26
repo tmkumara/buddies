@@ -1,9 +1,13 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { Plus, Search, AlertTriangle } from "lucide-react";
 import { ChevronRight } from "lucide-react";
 import { MaterialStatus } from "@prisma/client";
+import StatChip from "@/components/ui/StatChip";
+import FilterTabBar from "@/components/ui/FilterTabBar";
+import PaginationBar from "@/components/ui/PaginationBar";
 import MaterialSlideOver, { MaterialData } from "./MaterialSlideOver";
 import MaterialExpandRow from "./MaterialExpandRow";
 import MaterialCard, { MaterialRow } from "./MaterialCard";
@@ -18,26 +22,63 @@ const STATUS_PILL: Record<MaterialStatus, string> = {
 
 const TABS: FilterTab[] = ["ALL", "ACTIVE", "PENDING", "INACTIVE"];
 
-interface Props { materials: MaterialRow[]; }
+interface StatTotals {
+  total: number;
+  active: number;
+  pending: number;
+  lowStock: number;
+}
 
-export default function MaterialsClient({ materials }: Props) {
-  const [search, setSearch]         = useState("");
-  const [filter, setFilter]         = useState<FilterTab>("ALL");
+interface Props {
+  materials: MaterialRow[];
+  filteredTotal: number;
+  page: number;
+  size: number;
+  currentQ: string;
+  currentStatus: string;
+  statTotals: StatTotals;
+}
+
+export default function MaterialsClient({
+  materials,
+  filteredTotal,
+  page,
+  size,
+  currentQ,
+  currentStatus,
+  statTotals,
+}: Props) {
+  const router = useRouter();
+  const [searchValue, setSearchValue] = useState(currentQ);
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [slideOpen, setSlideOpen]   = useState(false);
   const [editTarget, setEditTarget] = useState<MaterialData | undefined>(undefined);
+  const isFirstRender = useRef(true);
 
-  const lowStockCount = materials.filter(
-    (m) => m.status === "ACTIVE" && m.minStockLevel > 0 && m.currentStockLevel <= m.minStockLevel
-  ).length;
+  // Debounced URL update when search value changes
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+    const timer = setTimeout(() => {
+      const params = new URLSearchParams();
+      if (searchValue) params.set("q", searchValue);
+      if (currentStatus && currentStatus !== "ALL") params.set("status", currentStatus);
+      params.set("size", String(size));
+      // page intentionally omitted → resets to 1
+      router.replace(`?${params.toString()}`);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchValue]);
 
-  const filtered = useMemo(() => materials.filter((m) => {
-    if (filter !== "ALL" && m.status !== filter) return false;
-    const q = search.toLowerCase();
-    return !q || m.code.toLowerCase().includes(q) || m.name.toLowerCase().includes(q);
-  }), [materials, filter, search]);
+  // currentParams passed to FilterTabBar and PaginationBar so they preserve other params
+  const currentParams: Record<string, string> = {};
+  if (searchValue) currentParams.q = searchValue;
+  if (currentStatus && currentStatus !== "ALL") currentParams.status = currentStatus;
+  currentParams.size = String(size);
 
-  function openNew() { setEditTarget(undefined); setSlideOpen(true); }
+  function openNew()  { setEditTarget(undefined); setSlideOpen(true); }
   function openEdit(id: number) {
     const m = materials.find((x) => x.id === id);
     if (m) { setEditTarget(m as MaterialData); setSlideOpen(true); }
@@ -56,20 +97,17 @@ export default function MaterialsClient({ materials }: Props) {
     <div style={{ padding: "1.25rem 1.75rem" }}>
       {/* Stat strip */}
       <div className="stat-strip" style={{ marginBottom: "1rem" }}>
-        <div className="stat-strip-chip">
-          <span className="value">{materials.length}</span><span>TOTAL</span>
-        </div>
-        <div className="stat-strip-chip">
-          <span className="value" style={{ color: "#4ADE80" }}>{materials.filter((m) => m.status === "ACTIVE").length}</span><span>ACTIVE</span>
-        </div>
-        <div className="stat-strip-chip">
-          <span className="value" style={{ color: "#FBBF24" }}>{materials.filter((m) => m.status === "PENDING").length}</span><span>PENDING</span>
-        </div>
-        {lowStockCount > 0 && (
-          <div className="stat-strip-chip low-stock">
-            <AlertTriangle size={11} style={{ color: "#F87171" }} />
-            <span className="value">{lowStockCount}</span><span>LOW STOCK</span>
-          </div>
+        <StatChip label="TOTAL"   value={statTotals.total} />
+        <StatChip label="ACTIVE"  value={statTotals.active}  color="#4ADE80" />
+        <StatChip label="PENDING" value={statTotals.pending} color="#FBBF24" />
+        {statTotals.lowStock > 0 && (
+          <StatChip
+            label="LOW STOCK"
+            value={statTotals.lowStock}
+            color="#F87171"
+            icon={<AlertTriangle size={11} style={{ color: "#F87171" }} />}
+            pulse
+          />
         )}
       </div>
 
@@ -79,32 +117,38 @@ export default function MaterialsClient({ materials }: Props) {
           <Search size={12} style={{ position: "absolute", left: "0.75rem", top: "50%", transform: "translateY(-50%)", color: "rgba(240,237,230,0.22)", pointerEvents: "none" }} />
           <input
             type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            value={searchValue}
+            onChange={(e) => setSearchValue(e.target.value)}
             placeholder="Search code or name…"
             className="form-input"
             style={{ paddingLeft: "2.1rem", fontSize: "0.76rem" }}
           />
         </div>
-        <div className="filter-tabs">
-          {TABS.map((t) => (
-            <button key={t} type="button" className={`filter-tab${filter === t ? " active" : ""}`} onClick={() => setFilter(t)}>{t}</button>
-          ))}
-        </div>
-        <button type="button" className="cta-btn" onClick={openNew}
-          style={{ display: "flex", alignItems: "center", gap: "0.4rem", fontSize: "0.68rem", padding: "0.48rem 1rem", marginLeft: "auto" }}>
-          <Plus size={12} />New Material
+        <FilterTabBar
+          tabs={TABS}
+          activeTab={currentStatus || "ALL"}
+          currentParams={currentParams}
+        />
+        <button
+          type="button"
+          className="cta-btn"
+          onClick={openNew}
+          style={{ display: "flex", alignItems: "center", gap: "0.4rem", fontSize: "0.68rem", padding: "0.48rem 1rem", marginLeft: "auto" }}
+        >
+          <Plus size={12} /> New Material
         </button>
       </div>
 
-      {filtered.length === 0 && (
+      {materials.length === 0 && (
         <div className="content-card" style={{ padding: "3rem 0", textAlign: "center", fontSize: "0.8rem", color: "rgba(240,237,230,0.22)" }}>
-          {search || filter !== "ALL" ? "No materials match your filter." : "No materials yet."}
+          {searchValue || currentStatus !== "ALL"
+            ? "No materials match your filter."
+            : "No materials yet."}
         </div>
       )}
 
       {/* Desktop/tablet table */}
-      {filtered.length > 0 && (
+      {materials.length > 0 && (
         <div id="materials-table-view">
           <div className="content-card" style={{ padding: 0, overflow: "hidden" }}>
             <table className="orders-table">
@@ -122,7 +166,7 @@ export default function MaterialsClient({ materials }: Props) {
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((m) => {
+                {materials.map((m) => {
                   const isExpanded = expandedId === m.id;
                   const lowStock = m.status === "ACTIVE" && m.minStockLevel > 0 && m.currentStockLevel <= m.minStockLevel;
                   const pct = m.minStockLevel > 0 ? Math.min((m.currentStockLevel / m.minStockLevel) * 100, 100) : 100;
@@ -181,15 +225,27 @@ export default function MaterialsClient({ materials }: Props) {
               </tbody>
             </table>
           </div>
+          <PaginationBar
+            total={filteredTotal}
+            page={page}
+            size={size}
+            currentParams={currentParams}
+          />
         </div>
       )}
 
       {/* Mobile cards */}
-      {filtered.length > 0 && (
+      {materials.length > 0 && (
         <div id="materials-card-view">
-          {filtered.map((m) => (
+          {materials.map((m) => (
             <MaterialCard key={m.id} material={m} onFullEdit={openEdit} />
           ))}
+          <PaginationBar
+            total={filteredTotal}
+            page={page}
+            size={size}
+            currentParams={currentParams}
+          />
         </div>
       )}
 
