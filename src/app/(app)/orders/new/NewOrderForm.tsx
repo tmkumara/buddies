@@ -4,22 +4,24 @@ import { useState, useRef, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createOrder } from "@/actions/orders";
-import OrderItemsEditor, { type BoxDesignOption, type OrderItem } from "@/components/orders/OrderItemsEditor";
+import OrderItemsEditor, { type BoxDesignOption, type BoxTypeOption, type OrderItem } from "@/components/orders/OrderItemsEditor";
 import type { DesignTypeOption, MaterialOption } from "@/components/orders/QuickCreateDesignPanel";
 
 interface Customer { id: number; name: string; phone: string; }
 
 interface Props {
   customers:   Customer[];
+  boxTypes:    BoxTypeOption[];
   boxDesigns:  BoxDesignOption[];
   designTypes: DesignTypeOption[];
   materials:   MaterialOption[];
+  isAdmin:     boolean;
 }
 
 const today = new Date().toISOString().split("T")[0];
 const defaultDelivery = new Date(Date.now() + 7 * 86400000).toISOString().split("T")[0];
 
-export default function NewOrderForm({ customers, boxDesigns, designTypes, materials }: Props) {
+export default function NewOrderForm({ customers, boxTypes, boxDesigns, designTypes, materials, isAdmin }: Props) {
   const router = useRouter();
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -113,9 +115,11 @@ export default function NewOrderForm({ customers, boxDesigns, designTypes, mater
           {/* ── Items Editor ── */}
           <div style={{ borderTop: "1px solid rgba(245,182,30,0.08)", paddingTop: "1.25rem", marginBottom: "1.25rem" }}>
             <OrderItemsEditor
+              boxTypes={boxTypes}
               boxDesigns={boxDesigns}
               designTypes={designTypes}
               materials={materials}
+              isAdmin={isAdmin}
               onChange={setItems}
             />
           </div>

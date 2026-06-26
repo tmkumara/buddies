@@ -102,16 +102,18 @@ export async function quickCreateBoxDesign(formData: FormData) {
       data: { ...parsed.data, rawAreaSqCm },
       select: {
         id: true, code: true, name: true, unitPrice: true,
+        designTypeId: true,
         designType: { select: { name: true } },
       },
     });
     return {
       data: {
-        id:             bd.id,
-        code:           bd.code,
-        name:           bd.name,
-        unitPrice:      Number(bd.unitPrice),
-        designTypeName: bd.designType.name,
+        id:          bd.id,
+        code:        bd.code,
+        name:        bd.name,
+        unitPrice:   Number(bd.unitPrice),
+        boxTypeId:   bd.designTypeId,
+        boxTypeName: bd.designType.name,
       },
     };
   } catch (e: unknown) {
