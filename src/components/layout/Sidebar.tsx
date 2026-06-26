@@ -5,13 +5,14 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
 import {
-  LayoutDashboard, Package, Users, BoxSelect, Archive, UserCog,
+  LayoutDashboard, Package, Users, BoxSelect, Archive, UserCog, Factory,
 } from "lucide-react";
 
 const mainNav = [
-  { label: "Dashboard", href: "/dashboard",    icon: LayoutDashboard },
-  { label: "Orders",    href: "/orders",        icon: Package },
-  { label: "Customers", href: "/customers",     icon: Users },
+  { label: "Dashboard",  href: "/dashboard",    icon: LayoutDashboard },
+  { label: "Orders",     href: "/orders",       icon: Package },
+  { label: "Production", href: "/production",   icon: Factory },
+  { label: "Customers",  href: "/customers",    icon: Users },
 ];
 
 const catalogNav = [
