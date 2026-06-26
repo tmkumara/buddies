@@ -13,9 +13,12 @@ export async function createMaterial(formData: FormData) {
     code:              formData.get("code") as string,
     name:              formData.get("name") as string,
     gsm:               formData.get("gsm"),
-    sheetLengthCm:     formData.get("sheetLengthCm"),
-    sheetWidthCm:      formData.get("sheetWidthCm"),
+    sheetLengthCm:     formData.get("sheetLengthCm") || undefined,
+    sheetWidthCm:      formData.get("sheetWidthCm")  || undefined,
+    sheetLengthIn:     formData.get("sheetLengthIn") || undefined,
+    sheetWidthIn:      formData.get("sheetWidthIn")  || undefined,
     costPerSheet:      formData.get("costPerSheet"),
+    unitPrice:         formData.get("unitPrice"),
     minStockLevel:     formData.get("minStockLevel"),
     currentStockLevel: formData.get("currentStockLevel"),
     status:            formData.get("status") ?? "ACTIVE",
@@ -42,9 +45,12 @@ export async function updateMaterial(id: number, formData: FormData) {
     code:              formData.get("code") as string,
     name:              formData.get("name") as string,
     gsm:               formData.get("gsm"),
-    sheetLengthCm:     formData.get("sheetLengthCm"),
-    sheetWidthCm:      formData.get("sheetWidthCm"),
+    sheetLengthCm:     formData.get("sheetLengthCm") || undefined,
+    sheetWidthCm:      formData.get("sheetWidthCm")  || undefined,
+    sheetLengthIn:     formData.get("sheetLengthIn") || undefined,
+    sheetWidthIn:      formData.get("sheetWidthIn")  || undefined,
     costPerSheet:      formData.get("costPerSheet"),
+    unitPrice:         formData.get("unitPrice"),
     minStockLevel:     formData.get("minStockLevel"),
     currentStockLevel: formData.get("currentStockLevel"),
     status:            formData.get("status") ?? "ACTIVE",
@@ -61,6 +67,14 @@ export async function updateMaterial(id: number, formData: FormData) {
 export async function updateMaterialStatus(id: number, status: MaterialStatus) {
   await requireAuth();
   await prisma.material.update({ where: { id }, data: { status } });
+  revalidatePath("/materials");
+  return { success: true };
+}
+
+export async function updateMaterialStock(id: number, value: number) {
+  await requireAuth();
+  if (value < 0) return { error: "Stock level cannot be negative." };
+  await prisma.material.update({ where: { id }, data: { currentStockLevel: value } });
   revalidatePath("/materials");
   return { success: true };
 }
