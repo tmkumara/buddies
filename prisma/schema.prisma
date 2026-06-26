@@ -74,15 +74,18 @@ model DesignType {
 }
 
 model Material {
-  id                Int         @id @default(autoincrement())
-  code              String      @unique @db.VarChar(50)
-  name              String      @db.VarChar(100)
+  id                Int            @id @default(autoincrement())
+  code              String         @unique @db.VarChar(50)
+  name              String         @db.VarChar(100)
   gsm               Int
-  sheetLengthCm     Decimal     @map("sheet_length_cm") @db.Decimal(8, 2)
-  sheetWidthCm      Decimal     @map("sheet_width_cm") @db.Decimal(8, 2)
-  costPerSheet      Decimal     @map("cost_per_sheet") @db.Decimal(10, 2)
-  minStockLevel     Decimal     @default(0.00) @map("min_stock_level") @db.Decimal(10, 2)
-  currentStockLevel Decimal     @default(0.00) @map("current_stock_level") @db.Decimal(10, 2)
+  sheetLengthCm     Decimal?       @map("sheet_length_cm") @db.Decimal(8, 2)
+  sheetWidthCm      Decimal?       @map("sheet_width_cm") @db.Decimal(8, 2)
+  sheetLengthIn     Decimal?       @map("sheet_length_in") @db.Decimal(8, 4)
+  sheetWidthIn      Decimal?       @map("sheet_width_in") @db.Decimal(8, 4)
+  costPerSheet      Decimal        @map("cost_per_sheet") @db.Decimal(10, 2)
+  unitPrice         Decimal        @default(0.00) @map("unit_price") @db.Decimal(10, 2)
+  minStockLevel     Decimal        @default(0.00) @map("min_stock_level") @db.Decimal(10, 2)
+  currentStockLevel Decimal        @default(0.00) @map("current_stock_level") @db.Decimal(10, 2)
   status            MaterialStatus @default(ACTIVE)
   createdAt         DateTime       @default(now()) @map("created_at") @db.DateTime
   updatedAt         DateTime       @updatedAt @map("updated_at") @db.DateTime
@@ -93,25 +96,30 @@ model Material {
 }
 
 model BoxDesign {
-  id             Int         @id @default(autoincrement())
-  code           String      @unique @db.VarChar(50)
-  name           String      @db.VarChar(150)
-  designTypeId   Int         @map("design_type_id")
-  designType     DesignType  @relation(fields: [designTypeId], references: [id])
-  materialId     Int         @map("material_id")
-  material       Material    @relation(fields: [materialId], references: [id])
-  lengthCm       Decimal     @map("length_cm") @db.Decimal(8, 2)
-  widthCm        Decimal     @map("width_cm") @db.Decimal(8, 2)
-  heightCm       Decimal     @map("height_cm") @db.Decimal(8, 2)
-  cutLengthCm    Decimal     @map("cut_length_cm") @db.Decimal(8, 2)
-  cutWidthCm     Decimal     @map("cut_width_cm") @db.Decimal(8, 2)
-  rawAreaSqCm    Decimal?    @map("raw_area_sq_cm") @db.Decimal(12, 2)
-  unitPrice      Decimal     @map("unit_price") @db.Decimal(10, 2)
-  designFilePath String?     @map("design_file_path") @db.VarChar(255)
-  custom         Boolean     @default(false) @map("is_custom")
-  active         Boolean     @default(true) @map("is_active")
-  createdAt      DateTime    @default(now()) @map("created_at") @db.DateTime
-  updatedAt      DateTime    @updatedAt @map("updated_at") @db.DateTime
+  id             Int        @id @default(autoincrement())
+  code           String     @unique @db.VarChar(50)
+  name           String     @db.VarChar(150)
+  designTypeId   Int        @map("design_type_id")
+  designType     DesignType @relation(fields: [designTypeId], references: [id])
+  materialId     Int        @map("material_id")
+  material       Material   @relation(fields: [materialId], references: [id])
+  lengthCm       Decimal?   @map("length_cm") @db.Decimal(8, 2)
+  widthCm        Decimal?   @map("width_cm") @db.Decimal(8, 2)
+  heightCm       Decimal?   @map("height_cm") @db.Decimal(8, 2)
+  lengthIn       Decimal?   @map("length_in") @db.Decimal(8, 4)
+  widthIn        Decimal?   @map("width_in") @db.Decimal(8, 4)
+  heightIn       Decimal?   @map("height_in") @db.Decimal(8, 4)
+  cutLengthCm    Decimal?   @map("cut_length_cm") @db.Decimal(8, 2)
+  cutWidthCm     Decimal?   @map("cut_width_cm") @db.Decimal(8, 2)
+  cutLengthIn    Decimal?   @map("cut_length_in") @db.Decimal(8, 4)
+  cutWidthIn     Decimal?   @map("cut_width_in") @db.Decimal(8, 4)
+  rawAreaSqCm    Decimal?   @map("raw_area_sq_cm") @db.Decimal(12, 2)
+  unitPrice      Decimal    @map("unit_price") @db.Decimal(10, 2)
+  designFilePath String?    @map("design_file_path") @db.VarChar(255)
+  custom         Boolean    @default(false) @map("is_custom")
+  active         Boolean    @default(true) @map("is_active")
+  createdAt      DateTime   @default(now()) @map("created_at") @db.DateTime
+  updatedAt      DateTime   @updatedAt @map("updated_at") @db.DateTime
   orderItems     OrderItem[]
 
   @@index([active])
