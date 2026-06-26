@@ -18,11 +18,16 @@ export default async function EditBoxDesignPage({ params }: { params: Promise<{ 
 
   const boxDesign = {
     ...raw,
-    lengthCm:    Number(raw.lengthCm),
-    widthCm:     Number(raw.widthCm),
-    heightCm:    Number(raw.heightCm),
-    cutLengthCm: Number(raw.cutLengthCm),
-    cutWidthCm:  Number(raw.cutWidthCm),
+    lengthIn:    raw.lengthIn    != null ? Number(raw.lengthIn)    : null,
+    widthIn:     raw.widthIn     != null ? Number(raw.widthIn)     : null,
+    heightIn:    raw.heightIn    != null ? Number(raw.heightIn)    : null,
+    cutLengthIn: raw.cutLengthIn != null ? Number(raw.cutLengthIn) : null,
+    cutWidthIn:  raw.cutWidthIn  != null ? Number(raw.cutWidthIn)  : null,
+    lengthCm:    raw.lengthCm    != null ? Number(raw.lengthCm)    : null,
+    widthCm:     raw.widthCm     != null ? Number(raw.widthCm)     : null,
+    heightCm:    raw.heightCm    != null ? Number(raw.heightCm)    : null,
+    cutLengthCm: raw.cutLengthCm != null ? Number(raw.cutLengthCm) : null,
+    cutWidthCm:  raw.cutWidthCm  != null ? Number(raw.cutWidthCm)  : null,
     rawAreaSqCm: raw.rawAreaSqCm !== null ? Number(raw.rawAreaSqCm) : null,
     unitPrice:   Number(raw.unitPrice),
   };

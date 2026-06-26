@@ -5,13 +5,16 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createBoxDesign, updateBoxDesign } from "@/actions/box-designs";
 import Combobox from "@/components/ui/Combobox";
+import UnitInput from "@/components/ui/UnitInput";
 
 interface SelectOption { id: number; code: string; name: string; }
 
 interface BoxDesign {
   id: number; code: string; name: string; designTypeId: number; materialId: number;
-  lengthCm: number; widthCm: number; heightCm: number;
-  cutLengthCm: number; cutWidthCm: number;
+  lengthCm: number | null; widthCm: number | null; heightCm: number | null;
+  lengthIn: number | null; widthIn: number | null; heightIn: number | null;
+  cutLengthCm: number | null; cutWidthCm: number | null;
+  cutLengthIn: number | null; cutWidthIn: number | null;
   unitPrice: number; custom: boolean; active: boolean;
 }
 
@@ -86,34 +89,24 @@ export default function BoxDesignForm({ designTypes, materials, existing }: Prop
           </div>
 
           <div style={{ borderTop: "1px solid rgba(245,182,30,0.08)", paddingTop: "1rem" }}>
-            <p className="form-label" style={{ marginBottom: "0.75rem" }}>BOX DIMENSIONS (cm)</p>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "1rem" }}>
-              <div className="form-field">
-                <label htmlFor="lengthCm" className="form-label">LENGTH *</label>
-                <input id="lengthCm" name="lengthCm" type="number" step="0.01" min="0" className="form-input" defaultValue={existing ? Number(existing.lengthCm) : undefined} required />
-              </div>
-              <div className="form-field">
-                <label htmlFor="widthCm" className="form-label">WIDTH *</label>
-                <input id="widthCm" name="widthCm" type="number" step="0.01" min="0" className="form-input" defaultValue={existing ? Number(existing.widthCm) : undefined} required />
-              </div>
-              <div className="form-field">
-                <label htmlFor="heightCm" className="form-label">HEIGHT *</label>
-                <input id="heightCm" name="heightCm" type="number" step="0.01" min="0" className="form-input" defaultValue={existing ? Number(existing.heightCm) : undefined} required />
-              </div>
+            <p className="form-section-label" style={{ marginBottom: "0.75rem" }}>BOX DIMENSIONS</p>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "0.75rem" }}>
+              <UnitInput labelPrefix="LENGTH" nameCm="lengthCm" nameIn="lengthIn"
+                defaultValueCm={existing?.lengthCm} defaultValueIn={existing?.lengthIn} required />
+              <UnitInput labelPrefix="WIDTH" nameCm="widthCm" nameIn="widthIn"
+                defaultValueCm={existing?.widthCm} defaultValueIn={existing?.widthIn} required />
+              <UnitInput labelPrefix="HEIGHT" nameCm="heightCm" nameIn="heightIn"
+                defaultValueCm={existing?.heightCm} defaultValueIn={existing?.heightIn} required />
             </div>
           </div>
 
           <div>
-            <p className="form-label" style={{ marginBottom: "0.75rem" }}>CUT SHEET (cm) — used to compute raw area</p>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
-              <div className="form-field">
-                <label htmlFor="cutLengthCm" className="form-label">CUT LENGTH *</label>
-                <input id="cutLengthCm" name="cutLengthCm" type="number" step="0.01" min="0" className="form-input" defaultValue={existing ? Number(existing.cutLengthCm) : undefined} required />
-              </div>
-              <div className="form-field">
-                <label htmlFor="cutWidthCm" className="form-label">CUT WIDTH *</label>
-                <input id="cutWidthCm" name="cutWidthCm" type="number" step="0.01" min="0" className="form-input" defaultValue={existing ? Number(existing.cutWidthCm) : undefined} required />
-              </div>
+            <p className="form-section-label" style={{ marginBottom: "0.75rem" }}>CUT SHEET — used to compute raw area</p>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem" }}>
+              <UnitInput labelPrefix="CUT LENGTH" nameCm="cutLengthCm" nameIn="cutLengthIn"
+                defaultValueCm={existing?.cutLengthCm} defaultValueIn={existing?.cutLengthIn} required />
+              <UnitInput labelPrefix="CUT WIDTH" nameCm="cutWidthCm" nameIn="cutWidthIn"
+                defaultValueCm={existing?.cutWidthCm} defaultValueIn={existing?.cutWidthIn} required />
             </div>
           </div>
 
