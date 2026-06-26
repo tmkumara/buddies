@@ -1,24 +1,36 @@
 "use client";
 
 import Link from "next/link";
-import { toggleMaterialActive } from "@/actions/materials";
+import { updateMaterialStatus } from "@/actions/materials";
 import { AlertTriangle } from "lucide-react";
+import { MaterialStatus } from "@prisma/client";
 
 interface Material {
   id: number; code: string; name: string; gsm: number;
   sheetLengthCm: number; sheetWidthCm: number;
   costPerSheet: number; minStockLevel: number; currentStockLevel: number;
-  active: boolean;
+  status: MaterialStatus;
 }
 
-export default function MaterialRow({ material: m }: { material: Material }) {
-  const current = Number(m.currentStockLevel);
-  const min = Number(m.minStockLevel);
-  const lowStock = current <= min;
+const STATUS_PILL: Record<MaterialStatus, string> = {
+  ACTIVE:   "status-fulfilled",
+  PENDING:  "status-in-production",
+  INACTIVE: "status-cancelled",
+};
 
-  async function handleToggle() {
-    await toggleMaterialActive(m.id, !m.active);
-  }
+const STATUS_LABEL: Record<MaterialStatus, string> = {
+  ACTIVE:   "ACTIVE",
+  PENDING:  "PENDING",
+  INACTIVE: "INACTIVE",
+};
+
+export default function MaterialRow({ material: m }: { material: Material }) {
+  const current  = Number(m.currentStockLevel);
+  const min      = Number(m.minStockLevel);
+  const lowStock = current <= min && m.status === "ACTIVE";
+
+  async function handleActivate()   { await updateMaterialStatus(m.id, MaterialStatus.ACTIVE);   }
+  async function handleDeactivate() { await updateMaterialStatus(m.id, MaterialStatus.INACTIVE); }
 
   return (
     <tr>
@@ -34,7 +46,7 @@ export default function MaterialRow({ material: m }: { material: Material }) {
           <span style={{ color: lowStock ? "#F87171" : "rgba(240,237,230,0.6)", fontSize: "0.8rem", fontWeight: 600 }}>
             {current.toFixed(0)}
           </span>
-          {lowStock && m.active && (
+          {lowStock && (
             <span title={`Low stock (min: ${min})`}>
               <AlertTriangle size={12} style={{ color: "#F87171" }} />
             </span>
@@ -42,18 +54,26 @@ export default function MaterialRow({ material: m }: { material: Material }) {
         </div>
       </td>
       <td>
-        <span className={`status-pill ${m.active ? "status-fulfilled" : "status-cancelled"}`}>
-          {m.active ? "ACTIVE" : "INACTIVE"}
+        <span className={`status-pill ${STATUS_PILL[m.status]}`}>
+          {STATUS_LABEL[m.status]}
         </span>
       </td>
       <td style={{ textAlign: "right" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: "0.75rem" }}>
           <Link href={`/materials/${m.id}/edit`} className="nav-link" style={{ fontSize: "0.68rem" }}>Edit</Link>
-          <form action={handleToggle}>
-            <button type="submit" style={{ background: "none", border: "none", cursor: "pointer", fontSize: "0.68rem", color: m.active ? "#F87171" : "#4ADE80" }}>
-              {m.active ? "Deactivate" : "Activate"}
-            </button>
-          </form>
+          {m.status !== "INACTIVE" ? (
+            <form action={handleDeactivate}>
+              <button type="submit" style={{ background: "none", border: "none", cursor: "pointer", fontSize: "0.68rem", color: "#F87171" }}>
+                Deactivate
+              </button>
+            </form>
+          ) : (
+            <form action={handleActivate}>
+              <button type="submit" style={{ background: "none", border: "none", cursor: "pointer", fontSize: "0.68rem", color: "#4ADE80" }}>
+                Activate
+              </button>
+            </form>
+          )}
         </div>
       </td>
     </tr>

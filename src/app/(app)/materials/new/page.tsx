@@ -71,6 +71,14 @@ export default function NewMaterialPage() {
                 <input id="currentStockLevel" name="currentStockLevel" type="number" step="1" min="0" className="form-input" defaultValue="0" />
               </div>
             </div>
+            <div className="form-field">
+              <label htmlFor="status" className="form-label">STATUS</label>
+              <select id="status" name="status" className="form-input" defaultValue="ACTIVE">
+                <option value="ACTIVE">Active — in stock and available</option>
+                <option value="PENDING">Pending Purchase — requested, not yet bought</option>
+                <option value="INACTIVE">Inactive — discontinued</option>
+              </select>
+            </div>
             <div style={{ display: "flex", gap: "0.75rem", marginTop: "0.5rem" }}>
               <button type="submit" className="submit-btn" disabled={loading} style={{ flex: 1 }}>
                 {loading ? "SAVING…" : "SAVE MATERIAL"}

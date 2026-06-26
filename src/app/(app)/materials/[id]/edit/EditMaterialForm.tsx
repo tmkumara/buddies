@@ -9,7 +9,7 @@ interface Material {
   id: number; code: string; name: string; gsm: number;
   sheetLengthCm: number; sheetWidthCm: number;
   costPerSheet: number; minStockLevel: number; currentStockLevel: number;
-  active: boolean;
+  status: string;
 }
 
 export default function EditMaterialForm({ material: m }: { material: Material }) {
@@ -76,10 +76,12 @@ export default function EditMaterialForm({ material: m }: { material: Material }
             </div>
           </div>
           <div className="form-field">
-            <label className="form-label" style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-              <input type="checkbox" name="active" value="true" defaultChecked={m.active} style={{ accentColor: "#F5B61E" }} />
-              <span>Active</span>
-            </label>
+            <label htmlFor="status" className="form-label">STATUS</label>
+            <select id="status" name="status" className="form-input" defaultValue={m.status}>
+              <option value="ACTIVE">Active — in stock and available</option>
+              <option value="PENDING">Pending Purchase — requested, not yet bought</option>
+              <option value="INACTIVE">Inactive — discontinued</option>
+            </select>
           </div>
           <div style={{ display: "flex", gap: "0.75rem", marginTop: "0.5rem" }}>
             <button type="submit" className="submit-btn" disabled={loading} style={{ flex: 1 }}>

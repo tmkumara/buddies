@@ -8,7 +8,7 @@ export default async function NewBoxDesignPage() {
 
   const [designTypes, materials] = await Promise.all([
     prisma.designType.findMany({ where: { active: true }, orderBy: { name: "asc" }, select: { id: true, code: true, name: true } }),
-    prisma.material.findMany({ where: { active: true }, orderBy: { name: "asc" }, select: { id: true, code: true, name: true } }),
+    prisma.material.findMany({ where: { status: { not: "INACTIVE" } }, orderBy: { name: "asc" }, select: { id: true, code: true, name: true } }),
   ]);
 
   return (

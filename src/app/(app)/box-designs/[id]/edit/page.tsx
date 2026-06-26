@@ -11,7 +11,7 @@ export default async function EditBoxDesignPage({ params }: { params: Promise<{ 
   const [raw, designTypes, materials] = await Promise.all([
     prisma.boxDesign.findUnique({ where: { id: Number(id) } }),
     prisma.designType.findMany({ where: { active: true }, orderBy: { name: "asc" }, select: { id: true, code: true, name: true } }),
-    prisma.material.findMany({ where: { active: true }, orderBy: { name: "asc" }, select: { id: true, code: true, name: true } }),
+    prisma.material.findMany({ where: { status: { not: "INACTIVE" } }, orderBy: { name: "asc" }, select: { id: true, code: true, name: true } }),
   ]);
 
   if (!raw) notFound();

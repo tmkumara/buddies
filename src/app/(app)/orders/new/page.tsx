@@ -6,7 +6,7 @@ import NewOrderForm from "./NewOrderForm";
 export default async function NewOrderPage() {
   await requireAuth();
 
-  const [customers, boxDesigns] = await Promise.all([
+  const [customers, boxDesigns, designTypes, materials] = await Promise.all([
     prisma.customer.findMany({
       where: { active: true },
       orderBy: { name: "asc" },
@@ -19,6 +19,16 @@ export default async function NewOrderPage() {
         id: true, code: true, name: true, unitPrice: true,
         designType: { select: { name: true } },
       },
+    }),
+    prisma.designType.findMany({
+      where: { active: true },
+      orderBy: { name: "asc" },
+      select: { id: true, code: true, name: true },
+    }),
+    prisma.material.findMany({
+      where: { status: { not: "INACTIVE" } },
+      orderBy: { name: "asc" },
+      select: { id: true, code: true, name: true, status: true },
     }),
   ]);
 
@@ -34,7 +44,12 @@ export default async function NewOrderPage() {
     <>
       <TopBar title="New Order" />
       <div style={{ padding: "1.5rem 1.75rem", maxWidth: "760px" }}>
-        <NewOrderForm customers={customers} boxDesigns={serializedDesigns} />
+        <NewOrderForm
+          customers={customers}
+          boxDesigns={serializedDesigns}
+          designTypes={designTypes}
+          materials={materials}
+        />
       </div>
     </>
   );

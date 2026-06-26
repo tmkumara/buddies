@@ -9,7 +9,7 @@ export const materialSchema = z.object({
   costPerSheet:      z.coerce.number().nonnegative("Cost must be non-negative"),
   minStockLevel:     z.coerce.number().nonnegative("Min stock must be non-negative").default(0),
   currentStockLevel: z.coerce.number().nonnegative("Stock level must be non-negative").default(0),
-  active:            z.boolean().default(true),
+  status:            z.enum(["ACTIVE", "PENDING", "INACTIVE"]).default("ACTIVE"),
 });
 
 export type MaterialInput = z.infer<typeof materialSchema>;

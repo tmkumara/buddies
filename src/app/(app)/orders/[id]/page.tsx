@@ -16,7 +16,12 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
     where: { id: Number(id) },
     include: {
       customer: true,
-      items:    { orderBy: { id: "asc" } },
+      items: {
+        orderBy: { id: "asc" },
+        include: {
+          boxDesign: { select: { material: { select: { status: true } } } },
+        },
+      },
       statusHistory: {
         orderBy: { changedAt: "desc" },
         include: { changedBy: { select: { username: true } } },
@@ -30,6 +35,10 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
   const discountAmount = Number(order.discountAmount);
   const netAmount      = Number(order.netAmount);
   const discountPct    = totalAmount > 0 ? Math.round((discountAmount / totalAmount) * 100 * 100) / 100 : 0;
+
+  const hasPendingMaterial = order.items.some(
+    (item) => item.boxDesign.material.status === "PENDING"
+  );
 
   const deliveryDate = order.deliveryDate?.toISOString().split("T")[0] ?? null;
   const orderDate    = order.orderDate.toISOString().split("T")[0];
@@ -50,6 +59,25 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
           <span style={{ color: "rgba(240,237,230,0.2)", fontSize: "0.7rem" }}>/</span>
           <span style={{ fontSize: "0.78rem", color: "rgba(240,237,230,0.5)" }}>{order.orderNo}</span>
         </div>
+
+        {hasPendingMaterial && (
+          <div style={{
+            display: "flex", alignItems: "flex-start", gap: "0.65rem",
+            padding: "0.75rem 1rem", marginBottom: "1rem",
+            background: "rgba(251,191,36,0.07)", border: "1px solid rgba(251,191,36,0.25)",
+            borderRadius: "0.6rem",
+          }}>
+            <span style={{ fontSize: "0.9rem", flexShrink: 0, marginTop: "0.05rem" }}>⚠</span>
+            <div>
+              <p style={{ fontSize: "0.78rem", fontWeight: 600, color: "#FBBF24", margin: 0 }}>
+                Pending material
+              </p>
+              <p style={{ fontSize: "0.72rem", color: "rgba(251,191,36,0.7)", margin: "0.15rem 0 0" }}>
+                One or more box designs in this order use a material that is pending purchase. Confirm stock before moving to production.
+              </p>
+            </div>
+          </div>
+        )}
 
         <div className="content-card">
           {/* ── Order Header ── */}

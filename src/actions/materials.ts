@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { requireAuth } from "@/lib/auth-guards";
 import prisma from "@/lib/prisma";
 import { materialSchema } from "@/lib/validations/material";
+import { MaterialStatus } from "@prisma/client";
 
 export async function createMaterial(formData: FormData) {
   await requireAuth();
@@ -17,7 +18,7 @@ export async function createMaterial(formData: FormData) {
     costPerSheet:      formData.get("costPerSheet"),
     minStockLevel:     formData.get("minStockLevel"),
     currentStockLevel: formData.get("currentStockLevel"),
-    active:            true,
+    status:            formData.get("status") ?? "ACTIVE",
   };
 
   const parsed = materialSchema.safeParse(raw);
@@ -46,7 +47,7 @@ export async function updateMaterial(id: number, formData: FormData) {
     costPerSheet:      formData.get("costPerSheet"),
     minStockLevel:     formData.get("minStockLevel"),
     currentStockLevel: formData.get("currentStockLevel"),
-    active:            formData.get("active") === "true",
+    status:            formData.get("status") ?? "ACTIVE",
   };
 
   const parsed = materialSchema.safeParse(raw);
@@ -57,9 +58,9 @@ export async function updateMaterial(id: number, formData: FormData) {
   return { success: true };
 }
 
-export async function toggleMaterialActive(id: number, active: boolean) {
+export async function updateMaterialStatus(id: number, status: MaterialStatus) {
   await requireAuth();
-  await prisma.material.update({ where: { id }, data: { active } });
+  await prisma.material.update({ where: { id }, data: { status } });
   revalidatePath("/materials");
   return { success: true };
 }

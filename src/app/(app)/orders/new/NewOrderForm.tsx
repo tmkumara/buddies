@@ -5,18 +5,21 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createOrder } from "@/actions/orders";
 import OrderItemsEditor, { type BoxDesignOption, type OrderItem } from "@/components/orders/OrderItemsEditor";
+import type { DesignTypeOption, MaterialOption } from "@/components/orders/QuickCreateDesignPanel";
 
 interface Customer { id: number; name: string; phone: string; }
 
 interface Props {
-  customers: Customer[];
-  boxDesigns: BoxDesignOption[];
+  customers:   Customer[];
+  boxDesigns:  BoxDesignOption[];
+  designTypes: DesignTypeOption[];
+  materials:   MaterialOption[];
 }
 
 const today = new Date().toISOString().split("T")[0];
 const defaultDelivery = new Date(Date.now() + 7 * 86400000).toISOString().split("T")[0];
 
-export default function NewOrderForm({ customers, boxDesigns }: Props) {
+export default function NewOrderForm({ customers, boxDesigns, designTypes, materials }: Props) {
   const router = useRouter();
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -41,7 +44,7 @@ export default function NewOrderForm({ customers, boxDesigns }: Props) {
 
     const result = await createOrder(fd);
     if (result?.error) { setError(result.error); setLoading(false); }
-    // on success, server action redirects — no further action needed
+    // on success, server action redirects
   }
 
   const label: React.CSSProperties = {
@@ -68,7 +71,6 @@ export default function NewOrderForm({ customers, boxDesigns }: Props) {
         {error && <div className="form-error" style={{ marginBottom: "1rem" }}>{error}</div>}
 
         <form ref={formRef} onSubmit={handleSubmit} noValidate>
-          {/* ── Header Fields ── */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1rem" }}>
             <div>
               <label style={label}>CUSTOMER *</label>
@@ -110,7 +112,12 @@ export default function NewOrderForm({ customers, boxDesigns }: Props) {
 
           {/* ── Items Editor ── */}
           <div style={{ borderTop: "1px solid rgba(245,182,30,0.08)", paddingTop: "1.25rem", marginBottom: "1.25rem" }}>
-            <OrderItemsEditor boxDesigns={boxDesigns} onChange={setItems} />
+            <OrderItemsEditor
+              boxDesigns={boxDesigns}
+              designTypes={designTypes}
+              materials={materials}
+              onChange={setItems}
+            />
           </div>
 
           {/* ── Totals ── */}

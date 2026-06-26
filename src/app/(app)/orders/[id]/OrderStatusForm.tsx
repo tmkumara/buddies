@@ -47,7 +47,7 @@ export default function OrderStatusForm({ orderId, currentStatus }: Props) {
           <label style={{ fontSize: "0.62rem", letterSpacing: "0.08em", color: "rgba(240,237,230,0.3)", display: "block", marginBottom: "0.4rem" }}>
             NEW STATUS
           </label>
-          <select value={newStatus} onChange={(e) => setNewStatus(e.target.value)} style={input}>
+          <select value={newStatus} onChange={(e) => setNewStatus(e.target.value as OrderStatusKey)} style={input}>
             {allowed.map((s) => (
               <option key={s} value={s} style={{ background: "#0d0d0d" }}>{STATUS_LABELS[s]}</option>
             ))}

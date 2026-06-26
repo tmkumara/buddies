@@ -11,12 +11,16 @@ export default async function EditMaterialPage({ params }: { params: Promise<{ i
   if (!raw) notFound();
 
   const material = {
-    ...raw,
+    id:                raw.id,
+    code:              raw.code,
+    name:              raw.name,
+    gsm:               raw.gsm,
     sheetLengthCm:     Number(raw.sheetLengthCm),
     sheetWidthCm:      Number(raw.sheetWidthCm),
     costPerSheet:      Number(raw.costPerSheet),
     minStockLevel:     Number(raw.minStockLevel),
     currentStockLevel: Number(raw.currentStockLevel),
+    status:            raw.status as string,
   };
 
   return (
