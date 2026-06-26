@@ -36,7 +36,9 @@ export default function DesignTypeSlideOver({ open, onClose, existing }: Props) 
   useEffect(() => {
     if (!open) return;
     setActive(existing?.active ?? true);
-    setImageUrl(existing?.imageUrl ?? "");
+    const raw = existing?.imageUrl ?? "";
+    // Only show as preview if it's an uploaded path or a real URL
+    setImageUrl(raw && (raw.startsWith("/uploads/") || /^https?:\/\//.test(raw)) ? raw : "");
     setUploadError("");
     setError("");
   }, [open, existing?.id]);
