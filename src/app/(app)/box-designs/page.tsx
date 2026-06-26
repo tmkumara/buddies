@@ -1,81 +1,82 @@
 import { requireAuth } from "@/lib/auth-guards";
 import prisma from "@/lib/prisma";
 import TopBar from "@/components/layout/TopBar";
-import Link from "next/link";
-import { Plus } from "lucide-react";
-import BoxDesignRow from "./BoxDesignRow";
+import BoxDesignsClient from "@/components/box-designs/BoxDesignsClient";
 
-export default async function BoxDesignsPage() {
+export default async function BoxDesignsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string; status?: string; page?: string; size?: string }>;
+}) {
   await requireAuth();
+  const { q, status, page: pageParam, size: sizeParam } = await searchParams;
 
-  const boxDesigns = (await prisma.boxDesign.findMany({
-    orderBy: { code: "asc" },
-    include: {
-      designType: { select: { name: true } },
-      material:   { select: { name: true } },
-    },
-  })).map((bd) => ({
-    ...bd,
-    lengthCm:    bd.lengthCm    != null ? Number(bd.lengthCm)    : null,
-    widthCm:     bd.widthCm     != null ? Number(bd.widthCm)     : null,
-    heightCm:    bd.heightCm    != null ? Number(bd.heightCm)    : null,
-    lengthIn:    bd.lengthIn    != null ? Number(bd.lengthIn)    : null,
-    widthIn:     bd.widthIn     != null ? Number(bd.widthIn)     : null,
-    heightIn:    bd.heightIn    != null ? Number(bd.heightIn)    : null,
-    cutLengthCm: bd.cutLengthCm != null ? Number(bd.cutLengthCm) : null,
-    cutWidthCm:  bd.cutWidthCm  != null ? Number(bd.cutWidthCm)  : null,
-    cutLengthIn: bd.cutLengthIn != null ? Number(bd.cutLengthIn) : null,
-    cutWidthIn:  bd.cutWidthIn  != null ? Number(bd.cutWidthIn)  : null,
-    rawAreaSqCm: bd.rawAreaSqCm != null ? Number(bd.rawAreaSqCm) : null,
-    unitPrice:   Number(bd.unitPrice),
+  const VALID_SIZES = [20, 50, 100];
+  const size = VALID_SIZES.includes(parseInt(sizeParam ?? "")) ? parseInt(sizeParam!) : 20;
+  const page = Math.max(1, parseInt(pageParam ?? "1") || 1);
+  const skip = (page - 1) * size;
+
+  const where =
+    status === "ACTIVE"   ? { active: true,  ...(q ? { OR: [{ code: { contains: q } }, { name: { contains: q } }] } : {}) } :
+    status === "INACTIVE" ? { active: false, ...(q ? { OR: [{ code: { contains: q } }, { name: { contains: q } }] } : {}) } :
+    status === "CUSTOM"   ? { custom: true,  ...(q ? { OR: [{ code: { contains: q } }, { name: { contains: q } }] } : {}) } :
+    q ? { OR: [{ code: { contains: q } }, { name: { contains: q } }] } : {};
+
+  const [raw, filteredTotal, totalAll, totalActive, totalInactive, totalCustom, designTypes, materials] =
+    await Promise.all([
+      prisma.boxDesign.findMany({
+        where,
+        skip,
+        take: size,
+        include: { designType: { select: { name: true } }, material: { select: { code: true } } },
+        orderBy: { code: "asc" },
+      }),
+      prisma.boxDesign.count({ where }),
+      prisma.boxDesign.count(),
+      prisma.boxDesign.count({ where: { active: true } }),
+      prisma.boxDesign.count({ where: { active: false } }),
+      prisma.boxDesign.count({ where: { custom: true } }),
+      prisma.designType.findMany({ where: { active: true }, select: { id: true, code: true, name: true }, orderBy: { code: "asc" } }),
+      prisma.material.findMany({ where: { status: "ACTIVE" }, select: { id: true, code: true, name: true }, orderBy: { code: "asc" } }),
+    ]);
+
+  const designs = raw.map((d) => ({
+    id:             d.id,
+    code:           d.code,
+    name:           d.name,
+    designTypeId:   d.designTypeId,
+    designTypeName: d.designType.name,
+    materialId:     d.materialId,
+    materialCode:   d.material.code,
+    lengthCm:    d.lengthCm    != null ? Number(d.lengthCm)    : null,
+    widthCm:     d.widthCm     != null ? Number(d.widthCm)     : null,
+    heightCm:    d.heightCm    != null ? Number(d.heightCm)    : null,
+    lengthIn:    d.lengthIn    != null ? Number(d.lengthIn)    : null,
+    widthIn:     d.widthIn     != null ? Number(d.widthIn)     : null,
+    heightIn:    d.heightIn    != null ? Number(d.heightIn)    : null,
+    cutLengthCm: d.cutLengthCm != null ? Number(d.cutLengthCm) : null,
+    cutWidthCm:  d.cutWidthCm  != null ? Number(d.cutWidthCm)  : null,
+    cutLengthIn: d.cutLengthIn != null ? Number(d.cutLengthIn) : null,
+    cutWidthIn:  d.cutWidthIn  != null ? Number(d.cutWidthIn)  : null,
+    unitPrice:   Number(d.unitPrice),
+    custom:      d.custom,
+    active:      d.active,
   }));
 
   return (
     <>
       <TopBar title="Box Designs" />
-
-      <div style={{ padding: "1.5rem 1.75rem" }}>
-        <div className="flex items-center justify-between mb-5">
-          <p style={{ fontSize: "0.72rem", color: "rgba(240,237,230,0.35)", letterSpacing: "0.06em" }}>
-            {boxDesigns.length} BOX DESIGN{boxDesigns.length !== 1 ? "S" : ""}
-          </p>
-          <Link href="/box-designs/new">
-            <button className="cta-btn" style={{ display: "flex", alignItems: "center", gap: "0.4rem", fontSize: "0.72rem", padding: "0.5rem 1rem" }}>
-              <Plus size={14} />
-              New Box Design
-            </button>
-          </Link>
-        </div>
-
-        <div className="content-card" style={{ overflowX: "auto" }}>
-          {boxDesigns.length === 0 ? (
-            <div style={{ padding: "3rem 0", textAlign: "center", fontSize: "0.8rem", color: "rgba(240,237,230,0.25)" }}>
-              No box designs yet.{" "}
-              <Link href="/box-designs/new" className="nav-link">Add one →</Link>
-            </div>
-          ) : (
-            <table className="orders-table">
-              <thead>
-                <tr>
-                  <th>CODE</th>
-                  <th>NAME</th>
-                  <th>TYPE</th>
-                  <th>MATERIAL</th>
-                  <th>DIMS</th>
-                  <th>PRICE</th>
-                  <th>STATUS</th>
-                  <th style={{ textAlign: "right" }}>ACTIONS</th>
-                </tr>
-              </thead>
-              <tbody>
-                {boxDesigns.map((bd) => (
-                  <BoxDesignRow key={bd.id} boxDesign={bd} />
-                ))}
-              </tbody>
-            </table>
-          )}
-        </div>
-      </div>
+      <BoxDesignsClient
+        designs={designs}
+        filteredTotal={filteredTotal}
+        page={page}
+        size={size}
+        currentQ={q ?? ""}
+        currentStatus={status && ["ACTIVE", "INACTIVE", "CUSTOM"].includes(status) ? status : "ALL"}
+        statTotals={{ total: totalAll, active: totalActive, inactive: totalInactive, custom: totalCustom }}
+        designTypes={designTypes}
+        materials={materials}
+      />
     </>
   );
 }
