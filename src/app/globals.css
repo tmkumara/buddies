@@ -447,7 +447,17 @@ input, button, textarea, select, label {
 
 /* Responsive */
 @media (max-width: 1200px) { .dash-right { display: none; } }
-@media (max-width: 768px)  { .sidebar { display: none; } .dashboard-content { margin-left: 0; } }
+
+.sidebar-desktop { display: flex; }
+@media (max-width: 767px) {
+  .sidebar-desktop { display: none !important; }
+  .sidebar { display: none; }
+  .dashboard-content { margin-left: 0; }
+  .app-main {
+    margin-left: 0 !important;
+    padding-bottom: calc(5rem + env(safe-area-inset-bottom, 0px));
+  }
+}
 
 /* ── Form inputs ───────────────────────────────────── */
 
