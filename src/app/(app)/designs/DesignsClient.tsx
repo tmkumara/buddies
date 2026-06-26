@@ -14,6 +14,7 @@ export interface MaterialOption {
 
 export interface BoxDesignData {
   id: number; code: string; name: string; active: boolean; custom: boolean;
+  designTypeId: number;
   unitPrice: number;
   lengthIn: number | null; widthIn: number | null; heightIn: number | null;
   cutLengthIn: number | null; cutWidthIn: number | null;

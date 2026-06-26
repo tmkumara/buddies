@@ -50,9 +50,7 @@ export default function BoxDesignSlideOver({ isOpen, existing, defaultBoxType, b
   useEffect(() => {
     if (!isOpen) return;
     if (existing) {
-      // Fix: look up the parent BoxTypeData by finding which boxType contains this design
-      const parentBoxType = boxTypes.find((bt) => bt.boxDesigns.some((bd) => bd.id === existing.id));
-      setBoxTypeId(parentBoxType ? String(parentBoxType.id) : "");
+      setBoxTypeId(String(existing.designTypeId));
       setMaterialId(String(existing.material.id));
       setCode(existing.code);
       setName(existing.name);
