@@ -31,7 +31,7 @@ function extractRaw(formData: FormData, includeActive: boolean) {
 export async function createBoxDesign(formData: FormData) {
   await requireAuth();
 
-  const parsed = boxDesignSchema.safeParse(extractRaw(formData, false));
+  const parsed = boxDesignSchema.safeParse(extractRaw(formData, true));
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Validation error" };
 
   const rawAreaSqCm = calculateRawArea(parsed.data.cutLengthCm, parsed.data.cutWidthCm);
