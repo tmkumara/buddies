@@ -5,7 +5,9 @@ import { toggleBoxDesignActive } from "@/actions/box-designs";
 
 interface BoxDesign {
   id: number; code: string; name: string; custom: boolean; active: boolean;
-  lengthCm: number; widthCm: number; heightCm: number; unitPrice: number;
+  lengthCm: number | null; widthCm: number | null; heightCm: number | null;
+  lengthIn: number | null; widthIn: number | null; heightIn: number | null;
+  unitPrice: number;
   designType: { name: string };
   material: { name: string };
 }
@@ -29,7 +31,11 @@ export default function BoxDesignRow({ boxDesign: bd }: { boxDesign: BoxDesign }
       <td style={{ color: "rgba(240,237,230,0.55)", fontSize: "0.72rem" }}>{bd.designType.name}</td>
       <td style={{ color: "rgba(240,237,230,0.55)", fontSize: "0.72rem" }}>{bd.material.name}</td>
       <td style={{ color: "rgba(240,237,230,0.5)", fontSize: "0.72rem" }}>
-        {Number(bd.lengthCm)}×{Number(bd.widthCm)}×{Number(bd.heightCm)}
+        {bd.lengthIn != null && bd.widthIn != null && bd.heightIn != null
+          ? `${bd.lengthIn}×${bd.widthIn}×${bd.heightIn} in`
+          : bd.lengthCm != null && bd.widthCm != null && bd.heightCm != null
+          ? `${bd.lengthCm}×${bd.widthCm}×${bd.heightCm} cm`
+          : "—"}
       </td>
       <td style={{ color: "rgba(240,237,230,0.7)", fontWeight: 600 }}>
         {Number(bd.unitPrice).toFixed(2)}

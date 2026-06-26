@@ -16,12 +16,17 @@ export default async function BoxDesignsPage() {
     },
   })).map((bd) => ({
     ...bd,
-    lengthCm:    Number(bd.lengthCm),
-    widthCm:     Number(bd.widthCm),
-    heightCm:    Number(bd.heightCm),
-    cutLengthCm: Number(bd.cutLengthCm),
-    cutWidthCm:  Number(bd.cutWidthCm),
-    rawAreaSqCm: bd.rawAreaSqCm !== null ? Number(bd.rawAreaSqCm) : null,
+    lengthCm:    bd.lengthCm    != null ? Number(bd.lengthCm)    : null,
+    widthCm:     bd.widthCm     != null ? Number(bd.widthCm)     : null,
+    heightCm:    bd.heightCm    != null ? Number(bd.heightCm)    : null,
+    lengthIn:    bd.lengthIn    != null ? Number(bd.lengthIn)    : null,
+    widthIn:     bd.widthIn     != null ? Number(bd.widthIn)     : null,
+    heightIn:    bd.heightIn    != null ? Number(bd.heightIn)    : null,
+    cutLengthCm: bd.cutLengthCm != null ? Number(bd.cutLengthCm) : null,
+    cutWidthCm:  bd.cutWidthCm  != null ? Number(bd.cutWidthCm)  : null,
+    cutLengthIn: bd.cutLengthIn != null ? Number(bd.cutLengthIn) : null,
+    cutWidthIn:  bd.cutWidthIn  != null ? Number(bd.cutWidthIn)  : null,
+    rawAreaSqCm: bd.rawAreaSqCm != null ? Number(bd.rawAreaSqCm) : null,
     unitPrice:   Number(bd.unitPrice),
   }));
 
@@ -56,7 +61,7 @@ export default async function BoxDesignsPage() {
                   <th>NAME</th>
                   <th>TYPE</th>
                   <th>MATERIAL</th>
-                  <th>DIMS (cm)</th>
+                  <th>DIMS</th>
                   <th>PRICE</th>
                   <th>STATUS</th>
                   <th style={{ textAlign: "right" }}>ACTIONS</th>
