@@ -118,8 +118,17 @@ export default async function OrdersPage({ searchParams }: Props) {
           </Link>
         </div>
 
-        {/* ── Table ── */}
-        <div className="content-card" style={{ overflow: "clip" }}>
+        {/* ── Responsive show/hide ── */}
+        <style>{`
+          #orders-card-view { display: none; }
+          @media (max-width: 767px) {
+            #orders-table-view { display: none; }
+            #orders-card-view { display: block; }
+          }
+        `}</style>
+
+        {/* ── Table (desktop) ── */}
+        <div id="orders-table-view" className="content-card" style={{ overflow: "clip" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.75rem", padding: "0 0.25rem" }}>
             <span style={{ fontSize: "0.68rem", color: "rgba(240,237,230,0.3)", letterSpacing: "0.06em" }}>
               {total} ORDER{total !== 1 ? "S" : ""}
@@ -187,6 +196,45 @@ export default async function OrdersPage({ searchParams }: Props) {
               </tbody>
             </table>
             </div>
+          )}
+        </div>
+
+        {/* ── Card view (mobile ≤767px) ── */}
+        <div id="orders-card-view">
+          <div style={{ marginBottom: "0.75rem", padding: "0 0.25rem" }}>
+            <span style={{ fontSize: "0.68rem", color: "rgba(240,237,230,0.3)", letterSpacing: "0.06em" }}>
+              {total} ORDER{total !== 1 ? "S" : ""}
+            </span>
+          </div>
+
+          {serialized.length === 0 ? (
+            <div style={{ padding: "3rem 0", textAlign: "center", fontSize: "0.8rem", color: "rgba(240,237,230,0.25)" }}>
+              {search || statusFilter ? "No orders match your filter." : "No orders yet. "}
+              {!search && !statusFilter && (
+                <Link href="/orders/new" className="nav-link">Create one →</Link>
+              )}
+            </div>
+          ) : (
+            serialized.map((order) => (
+              <div key={order.id} style={{
+                background: "rgba(255,255,255,0.02)", border: "1px solid rgba(245,182,30,0.07)",
+                borderRadius: "0.5rem", padding: "0.9rem 1rem", marginBottom: "0.5rem",
+              }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "0.4rem" }}>
+                  <Link href={`/orders/${order.id}`} style={{ color: "#F5B61E", fontWeight: 700, fontSize: "0.9rem", textDecoration: "none" }}>
+                    {order.orderNo}
+                  </Link>
+                  <span className={`status-pill ${STATUS_CSS[order.status as OrderStatusKey]}`}>
+                    {STATUS_LABELS[order.status as OrderStatusKey]?.toUpperCase()}
+                  </span>
+                </div>
+                <p style={{ fontSize: "0.82rem", color: "#F0EDE6", marginBottom: "0.2rem" }}>{order.customer.name}</p>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <span style={{ fontSize: "0.7rem", color: "rgba(240,237,230,0.4)" }}>{order.orderDate}</span>
+                  <span style={{ fontSize: "0.85rem", fontWeight: 700, color: "#F5B61E" }}>Rs. {order.netAmount.toFixed(2)}</span>
+                </div>
+              </div>
+            ))
           )}
         </div>
 
