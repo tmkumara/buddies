@@ -9,6 +9,7 @@ import OrderItemsEditor, { type BoxTypeOption, type BoxDesignOption, type OrderI
 import { calculateQuantityDiscount } from "@/lib/utils/calculations";
 import type { DesignTypeOption, MaterialOption } from "@/components/orders/QuickCreateDesignPanel";
 import { useSession } from "next-auth/react";
+import Combobox from "@/components/ui/Combobox";
 
 interface LeadSource { id: number; name: string; }
 
@@ -109,16 +110,16 @@ export default function NewOrderForm({ customers, boxTypes, boxDesigns, designTy
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1rem" }}>
             <div>
               <label style={label}>LEAD SOURCE</label>
-              <select
+              <Combobox
+                name="__leadSource"
+                placeholder="— None —"
                 value={leadSourceId}
-                onChange={(e) => setLeadSourceId(e.target.value)}
-                style={{ ...input, background: "rgba(255,255,255,0.04)" }}
-              >
-                <option value="" style={{ background: "#0d0d0d" }}>— None —</option>
-                {leadSources.map((ls) => (
-                  <option key={ls.id} value={ls.id} style={{ background: "#0d0d0d" }}>{ls.name}</option>
-                ))}
-              </select>
+                options={[
+                  { value: "", label: "— None —" },
+                  ...leadSources.map((ls) => ({ value: ls.id, label: ls.name })),
+                ]}
+                onChange={(v) => setLeadSourceId(String(v))}
+              />
             </div>
             <div></div>
           </div>

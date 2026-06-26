@@ -7,6 +7,7 @@ import { updateOrderItems } from "@/actions/orders";
 import OrderItemsEditor, { type BoxTypeOption, type BoxDesignOption, type OrderItem } from "@/components/orders/OrderItemsEditor";
 import { calculateQuantityDiscount } from "@/lib/utils/calculations";
 import type { DesignTypeOption, MaterialOption } from "@/components/orders/QuickCreateDesignPanel";
+import Combobox from "@/components/ui/Combobox";
 
 interface Props {
   order: {
@@ -86,10 +87,15 @@ export default function EditOrderForm({ order, boxTypes, boxDesigns, designTypes
             </div>
             <div>
               <label style={label}>LEAD SOURCE</label>
-              <select name="leadSourceId" defaultValue={order.leadSourceId ?? ""} style={{ ...input, background: "rgba(255,255,255,0.04)" }}>
-                <option value="">— None —</option>
-                {leadSources.map((ls) => <option key={ls.id} value={ls.id}>{ls.name}</option>)}
-              </select>
+              <Combobox
+                name="leadSourceId"
+                placeholder="— None —"
+                defaultValue={order.leadSourceId ?? ""}
+                options={[
+                  { value: "", label: "— None —" },
+                  ...leadSources.map((ls) => ({ value: ls.id, label: ls.name })),
+                ]}
+              />
             </div>
           </div>
 

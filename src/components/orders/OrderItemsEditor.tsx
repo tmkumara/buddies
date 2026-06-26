@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Plus, Trash2, Sparkles, AlertTriangle } from "lucide-react";
 import QuickCreateDesignPanel, { type DesignTypeOption, type MaterialOption } from "./QuickCreateDesignPanel";
+import Combobox from "@/components/ui/Combobox";
 
 export interface BoxTypeOption {
   id: number;
@@ -136,7 +137,7 @@ export default function OrderItemsEditor({
             No items yet — click Add Item
           </div>
         ) : (
-          <div style={{ overflowX: "auto" }}>
+          <div>
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead>
                 <tr>
@@ -159,26 +160,28 @@ export default function OrderItemsEditor({
                   return (
                     <tr key={item.key}>
                       <td style={td}>
-                        <select value={typeId || ""} onChange={(e) => handleTypeChange(item.key, e.target.value)} style={sel}>
-                          <option value="">— All Types —</option>
-                          {boxTypes.map((bt) => <option key={bt.id} value={bt.id} style={{ background: "#0d0d0d" }}>{bt.code} — {bt.name}</option>)}
-                        </select>
+                        <Combobox
+                          name={`__type_${item.key}`}
+                          placeholder="— All Types —"
+                          value={typeId || ""}
+                          options={[
+                            { value: "", label: "— All Types —" },
+                            ...boxTypes.map((bt) => ({ value: bt.id, label: `${bt.code} — ${bt.name}` })),
+                          ]}
+                          onChange={(v) => handleTypeChange(item.key, String(v))}
+                        />
                       </td>
                       <td style={td}>
                         <div style={{ display: "flex", gap: "0.4rem", alignItems: "center" }}>
-                          <select
-                            value={item.boxDesignId || ""}
-                            onChange={(e) => handleBoxDesignChange(item.key, e.target.value)}
-                            required
-                            style={{ ...sel, color: item.boxDesignId ? "#F0EDE6" : "rgba(240,237,230,0.3)" }}
-                          >
-                            <option value="" disabled>— Select Design —</option>
-                            {filteredDesigns.map((bd) => (
-                              <option key={bd.id} value={bd.id} style={{ background: "#0d0d0d" }}>
-                                {bd.code} — {bd.name}
-                              </option>
-                            ))}
-                          </select>
+                          <div style={{ flex: 1 }}>
+                            <Combobox
+                              name={`__design_${item.key}`}
+                              placeholder="— Select Design —"
+                              value={item.boxDesignId || ""}
+                              options={filteredDesigns.map((bd) => ({ value: bd.id, label: bd.code, meta: bd.name }))}
+                              onChange={(v) => handleBoxDesignChange(item.key, String(v))}
+                            />
+                          </div>
                           <button type="button" onClick={() => setPanelOpenForKey(item.key)} title="Create new design" style={{ background: "rgba(245,182,30,0.07)", border: "1px solid rgba(245,182,30,0.2)", borderRadius: "0.4rem", padding: "0.4rem 0.5rem", color: "rgba(245,182,30,0.7)", cursor: "pointer", flexShrink: 0, display: "flex", alignItems: "center" }}>
                             <Sparkles size={13} />
                           </button>

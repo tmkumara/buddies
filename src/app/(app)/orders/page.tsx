@@ -143,8 +143,7 @@ export default async function OrdersPage({ searchParams }: Props) {
               )}
             </div>
           ) : (
-            <div style={{ overflowX: "auto" }}>
-            <table className="orders-table">
+            <table className="orders-table" style={{ width: "100%" }}>
               <thead style={{
                 position: "sticky",
                 top: "4.5rem",
@@ -195,7 +194,6 @@ export default async function OrdersPage({ searchParams }: Props) {
                 ))}
               </tbody>
             </table>
-            </div>
           )}
         </div>
 
