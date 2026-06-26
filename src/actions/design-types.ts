@@ -13,7 +13,7 @@ export async function createDesignType(formData: FormData) {
     name:        formData.get("name") as string,
     description: formData.get("description") as string || undefined,
     imageUrl:    formData.get("imageUrl") as string || undefined,
-    active:      true,
+    active:      formData.get("active") === "true",
   };
 
   const parsed = designTypeSchema.safeParse(raw);
@@ -26,7 +26,7 @@ export async function createDesignType(formData: FormData) {
         name:        parsed.data.name,
         description: parsed.data.description || null,
         imageUrl:    parsed.data.imageUrl || null,
-        active:      true,
+        active:      parsed.data.active,
       },
     });
   } catch (e: unknown) {
@@ -52,16 +52,22 @@ export async function updateDesignType(id: number, formData: FormData) {
   const parsed = designTypeSchema.safeParse(raw);
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Validation error" };
 
-  await prisma.designType.update({
-    where: { id },
-    data: {
-      code:        parsed.data.code,
-      name:        parsed.data.name,
-      description: parsed.data.description || null,
-      imageUrl:    parsed.data.imageUrl || null,
-      active:      parsed.data.active,
-    },
-  });
+  try {
+    await prisma.designType.update({
+      where: { id },
+      data: {
+        code:        parsed.data.code,
+        name:        parsed.data.name,
+        description: parsed.data.description || null,
+        imageUrl:    parsed.data.imageUrl || null,
+        active:      parsed.data.active,
+      },
+    });
+  } catch (e: unknown) {
+    if ((e as { code?: string }).code === "P2002") return { error: "A design type with this code already exists." };
+    if ((e as { code?: string }).code === "P2025") return { error: "Design type not found." };
+    throw e;
+  }
 
   revalidatePath("/design-types");
   return { success: true };
