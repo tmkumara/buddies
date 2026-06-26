@@ -70,7 +70,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
     <>
       <TopBar title={order.orderNo} />
 
-      <div style={{ padding: "1.5rem 1.75rem", maxWidth: "900px" }}>
+      <div style={{ padding: "1.5rem 1.75rem" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "1.25rem" }}>
           <Link href="/orders" className="nav-link" style={{ fontSize: "0.68rem" }}>← Orders</Link>
           <span style={{ color: "rgba(240,237,230,0.2)", fontSize: "0.7rem" }}>/</span>
