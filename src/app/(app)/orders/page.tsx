@@ -119,7 +119,7 @@ export default async function OrdersPage({ searchParams }: Props) {
         </div>
 
         {/* ── Table ── */}
-        <div className="content-card" style={{ overflowX: "auto" }}>
+        <div className="content-card" style={{ overflow: "clip" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.75rem", padding: "0 0.25rem" }}>
             <span style={{ fontSize: "0.68rem", color: "rgba(240,237,230,0.3)", letterSpacing: "0.06em" }}>
               {total} ORDER{total !== 1 ? "S" : ""}
@@ -134,17 +134,24 @@ export default async function OrdersPage({ searchParams }: Props) {
               )}
             </div>
           ) : (
+            <div style={{ overflowX: "auto" }}>
             <table className="orders-table">
-              <thead>
+              <thead style={{
+                position: "sticky",
+                top: "4.5rem",
+                zIndex: 2,
+                background: "rgba(10,10,10,0.98)",
+                boxShadow: "0 1px 0 rgba(245,182,30,0.1)",
+              }}>
                 <tr>
-                  <th>ORDER NO</th>
-                  <th>CUSTOMER</th>
-                  <th>ORDER DATE</th>
-                  <th>DELIVERY</th>
-                  <th>ITEMS</th>
-                  <th style={{ textAlign: "right" }}>NET AMOUNT</th>
-                  <th>STATUS</th>
-                  <th style={{ textAlign: "right" }}>ACTION</th>
+                  <th style={{ paddingTop: "0.75rem" }}>ORDER NO</th>
+                  <th style={{ paddingTop: "0.75rem" }}>CUSTOMER</th>
+                  <th style={{ paddingTop: "0.75rem" }}>ORDER DATE</th>
+                  <th style={{ paddingTop: "0.75rem" }}>DELIVERY</th>
+                  <th style={{ paddingTop: "0.75rem" }}>ITEMS</th>
+                  <th style={{ textAlign: "right", paddingTop: "0.75rem" }}>NET AMOUNT</th>
+                  <th style={{ paddingTop: "0.75rem" }}>STATUS</th>
+                  <th style={{ textAlign: "right", paddingTop: "0.75rem" }}>ACTION</th>
                 </tr>
               </thead>
               <tbody>
@@ -179,6 +186,7 @@ export default async function OrdersPage({ searchParams }: Props) {
                 ))}
               </tbody>
             </table>
+            </div>
           )}
         </div>
 

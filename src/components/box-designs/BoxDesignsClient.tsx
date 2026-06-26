@@ -143,17 +143,23 @@ export default function BoxDesignsClient({
 
       {designs.length > 0 && (
         <>
-          <div className="content-card" style={{ padding: 0, overflow: "hidden" }}>
+          <div className="content-card" style={{ padding: 0, overflow: "clip" }}>
             <table className="orders-table">
-              <thead>
+              <thead style={{
+                position: "sticky",
+                top: "4.5rem",
+                zIndex: 2,
+                background: "rgba(10,10,10,0.98)",
+                boxShadow: "0 1px 0 rgba(245,182,30,0.1)",
+              }}>
                 <tr>
-                  <th>CODE</th>
-                  <th>NAME</th>
-                  <th className="hide-tablet">TYPE</th>
-                  <th className="hide-tablet">MATERIAL</th>
-                  <th>DIMS</th>
-                  <th>PRICE</th>
-                  <th>STATUS</th>
+                  <th style={{ paddingTop: "0.75rem" }}>CODE</th>
+                  <th style={{ paddingTop: "0.75rem" }}>NAME</th>
+                  <th className="hide-tablet" style={{ paddingTop: "0.75rem" }}>TYPE</th>
+                  <th className="hide-tablet" style={{ paddingTop: "0.75rem" }}>MATERIAL</th>
+                  <th style={{ paddingTop: "0.75rem" }}>DIMS</th>
+                  <th style={{ paddingTop: "0.75rem" }}>PRICE</th>
+                  <th style={{ paddingTop: "0.75rem" }}>STATUS</th>
                 </tr>
               </thead>
               <tbody>

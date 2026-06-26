@@ -121,15 +121,21 @@ export default function CustomersClient({
       {/* Desktop/tablet table */}
       {customers.length > 0 && (
         <div id="customers-table-view">
-          <div className="content-card" style={{ padding: 0, overflow: "hidden" }}>
+          <div className="content-card" style={{ padding: 0, overflow: "clip" }}>
             <table className="orders-table">
-              <thead>
+              <thead style={{
+                position: "sticky",
+                top: "4.5rem",
+                zIndex: 2,
+                background: "rgba(10,10,10,0.98)",
+                boxShadow: "0 1px 0 rgba(245,182,30,0.1)",
+              }}>
                 <tr>
-                  <th style={{ width: "2rem" }} />
-                  <th>NAME</th>
-                  <th>PHONE</th>
-                  <th className="hide-tablet">EMAIL</th>
-                  <th>STATUS</th>
+                  <th style={{ width: "2rem", paddingTop: "0.75rem" }} />
+                  <th style={{ paddingTop: "0.75rem" }}>NAME</th>
+                  <th style={{ paddingTop: "0.75rem" }}>PHONE</th>
+                  <th className="hide-tablet" style={{ paddingTop: "0.75rem" }}>EMAIL</th>
+                  <th style={{ paddingTop: "0.75rem" }}>STATUS</th>
                 </tr>
               </thead>
               <tbody>
