@@ -967,3 +967,13 @@ select.form-input option {
 @media (max-width: 1023px) {
   .hide-tablet { display: none; }
 }
+
+/* ── Design Types responsive table / card switch ───── */
+
+#design-types-table-view { display: block; }
+#design-types-card-view  { display: none;  }
+
+@media (max-width: 767px) {
+  #design-types-table-view { display: none;  }
+  #design-types-card-view  { display: flex; flex-direction: column; gap: 0.75rem; }
+}
