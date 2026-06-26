@@ -4,22 +4,21 @@ import TopBar from "@/components/layout/TopBar";
 import NewOrderForm from "./NewOrderForm";
 
 export default async function NewOrderPage() {
-  const session = await requireAuth();
-  const isAdmin = session.user.role === "ADMIN";
+  await requireAuth();
 
-  const [customers, boxTypes, boxDesigns, materials] = await Promise.all([
+  const [customers, boxTypes, boxDesigns, designTypes, materials, leadSources] = await Promise.all([
     prisma.customer.findMany({
-      where: { active: true },
+      where:   { active: true },
       orderBy: { name: "asc" },
-      select: { id: true, name: true, phone: true },
+      select:  { id: true, name: true, phone: true, email: true },
     }),
     prisma.designType.findMany({
-      where: { active: true },
-      orderBy: { name: "asc" },
-      select: { id: true, code: true, name: true },
+      where:   { active: true },
+      orderBy: { code: "asc" },
+      select:  { id: true, code: true, name: true },
     }),
     prisma.boxDesign.findMany({
-      where: { active: true },
+      where:   { active: true },
       orderBy: { code: "asc" },
       select: {
         id: true, code: true, name: true, unitPrice: true,
@@ -27,10 +26,20 @@ export default async function NewOrderPage() {
         designType: { select: { name: true } },
       },
     }),
+    prisma.designType.findMany({
+      where:   { active: true },
+      orderBy: { code: "asc" },
+      select:  { id: true, code: true, name: true },
+    }),
     prisma.material.findMany({
-      where: { status: { not: "INACTIVE" } },
-      orderBy: { name: "asc" },
-      select: { id: true, code: true, name: true, status: true },
+      where:   { status: { not: "INACTIVE" } },
+      orderBy: { code: "asc" },
+      select:  { id: true, code: true, name: true, status: true },
+    }),
+    prisma.leadSource.findMany({
+      where:   { active: true },
+      orderBy: { id: "asc" },
+      select:  { id: true, name: true },
     }),
   ]);
 
@@ -46,14 +55,14 @@ export default async function NewOrderPage() {
   return (
     <>
       <TopBar title="New Order" />
-      <div style={{ padding: "1.5rem 1.75rem", maxWidth: "760px" }}>
+      <div style={{ padding: "1.5rem 1.75rem" }}>
         <NewOrderForm
           customers={customers}
           boxTypes={boxTypes}
           boxDesigns={serializedDesigns}
-          designTypes={boxTypes}
+          designTypes={designTypes}
           materials={materials}
-          isAdmin={isAdmin}
+          leadSources={leadSources}
         />
       </div>
     </>
