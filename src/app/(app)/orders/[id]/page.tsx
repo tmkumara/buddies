@@ -90,16 +90,30 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                 {STATUS_LABELS[order.status as OrderStatusKey]?.toUpperCase()}
               </span>
             </div>
-            <Link href={`/orders/${order.id}/invoice`} target="_blank">
-              <button style={{
-                display: "flex", alignItems: "center", gap: "0.4rem",
-                background: "rgba(245,182,30,0.07)", border: "1px solid rgba(245,182,30,0.2)",
-                borderRadius: "0.5rem", padding: "0.5rem 0.9rem",
-                color: "#F5B61E", fontSize: "0.68rem", letterSpacing: "0.07em", cursor: "pointer",
-              }}>
-                <FileText size={13} /> INVOICE
-              </button>
-            </Link>
+            <div style={{ display: "flex", gap: "0.5rem" }}>
+              {["DRAFT", "CONFIRMED", "IN_PRODUCTION"].includes(order.status) && (
+                <Link href={`/orders/${order.id}/edit`}>
+                  <button style={{
+                    display: "flex", alignItems: "center", gap: "0.4rem",
+                    background: "rgba(255,255,255,0.05)", border: "1px solid rgba(245,182,30,0.15)",
+                    borderRadius: "0.5rem", padding: "0.5rem 0.9rem",
+                    color: "rgba(240,237,230,0.6)", fontSize: "0.68rem", letterSpacing: "0.07em", cursor: "pointer",
+                  }}>
+                    EDIT ORDER
+                  </button>
+                </Link>
+              )}
+              <Link href={`/orders/${order.id}/invoice`} target="_blank">
+                <button style={{
+                  display: "flex", alignItems: "center", gap: "0.4rem",
+                  background: "rgba(245,182,30,0.07)", border: "1px solid rgba(245,182,30,0.2)",
+                  borderRadius: "0.5rem", padding: "0.5rem 0.9rem",
+                  color: "#F5B61E", fontSize: "0.68rem", letterSpacing: "0.07em", cursor: "pointer",
+                }}>
+                  <FileText size={13} /> INVOICE
+                </button>
+              </Link>
+            </div>
           </div>
 
           {/* ── Meta Info ── */}
