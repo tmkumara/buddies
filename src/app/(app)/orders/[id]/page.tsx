@@ -7,6 +7,7 @@ import { FileText } from "lucide-react";
 import { STATUS_LABELS, STATUS_CSS, type OrderStatusKey } from "@/lib/utils/status-transitions";
 import OrderStatusForm from "./OrderStatusForm";
 import OrderDetailsForm from "./OrderDetailsForm";
+import PaymentSection from "./PaymentSection";
 
 export default async function OrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
   await requireAuth();
@@ -26,6 +27,10 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
         orderBy: { changedAt: "desc" },
         include: { changedBy: { select: { username: true } } },
       },
+      payments: {
+        orderBy: { paymentDate: "asc" },
+        select: { id: true, amount: true, paymentDate: true, method: true, referenceNo: true, note: true },
+      },
     },
   });
 
@@ -39,6 +44,12 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
   const hasPendingMaterial = order.items.some(
     (item) => item.boxDesign.material.status === "PENDING"
   );
+
+  const payments = order.payments.map((p) => ({
+    ...p,
+    amount:      Number(p.amount),
+    paymentDate: p.paymentDate.toISOString().split("T")[0],
+  }));
 
   const deliveryDate = order.deliveryDate?.toISOString().split("T")[0] ?? null;
   const orderDate    = order.orderDate.toISOString().split("T")[0];
@@ -192,6 +203,16 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                 </div>
               </div>
             </div>
+          </div>
+
+          {/* ── Payments ── */}
+          <div style={section}>
+            <PaymentSection
+              orderId={order.id}
+              netAmount={netAmount}
+              payments={payments}
+              isTerminal={["DELIVERED", "CANCELLED"].includes(order.status)}
+            />
           </div>
 
           {/* ── Status Update ── */}
