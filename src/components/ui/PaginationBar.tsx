@@ -14,9 +14,10 @@ const SIZES = [20, 50, 100];
 export default function PaginationBar({ total, page, size, currentParams }: PaginationBarProps) {
   const router = useRouter();
 
-  if (total <= size) return null;
+  if (total === 0) return null;
 
   const totalPages = Math.ceil(total / size);
+  const showPageNav = total > size;
   const start = (page - 1) * size + 1;
   const end = Math.min(page * size, total);
 
@@ -84,62 +85,64 @@ export default function PaginationBar({ total, page, size, currentParams }: Pagi
       </span>
 
       {/* Page navigation */}
-      <div style={{ display: "flex", gap: "0.2rem", alignItems: "center" }}>
-        <button
-          type="button"
-          disabled={page === 1}
-          onClick={() => navigate(page - 1)}
-          style={{
-            ...btnBase,
-            padding: "0.25rem 0.6rem",
-            fontSize: "0.72rem",
-            color: page === 1 ? "rgba(240,237,230,0.18)" : "rgba(240,237,230,0.55)",
-            cursor: page === 1 ? "not-allowed" : "pointer",
-          }}
-        >
-          ‹ Prev
-        </button>
+      {showPageNav && (
+        <div style={{ display: "flex", gap: "0.2rem", alignItems: "center" }}>
+          <button
+            type="button"
+            disabled={page === 1}
+            onClick={() => navigate(page - 1)}
+            style={{
+              ...btnBase,
+              padding: "0.25rem 0.6rem",
+              fontSize: "0.72rem",
+              color: page === 1 ? "rgba(240,237,230,0.18)" : "rgba(240,237,230,0.55)",
+              cursor: page === 1 ? "not-allowed" : "pointer",
+            }}
+          >
+            ‹ Prev
+          </button>
 
-        {getPages().map((p, i) =>
-          p === "..." ? (
-            <span key={`e${i}`} style={{ padding: "0 0.2rem", color: "rgba(240,237,230,0.25)", fontSize: "0.72rem" }}>
-              …
-            </span>
-          ) : (
-            <button
-              key={p}
-              type="button"
-              onClick={() => navigate(p as number)}
-              style={{
-                ...btnBase,
-                padding: "0.25rem 0.55rem",
-                fontSize: "0.72rem",
-                minWidth: "2rem",
-                border: `1px solid ${p === page ? "rgba(245,182,30,0.5)" : "rgba(245,182,30,0.12)"}`,
-                background: p === page ? "rgba(245,182,30,0.1)" : "transparent",
-                color: p === page ? "#F5B61E" : "rgba(240,237,230,0.4)",
-              }}
-            >
-              {p}
-            </button>
-          )
-        )}
+          {getPages().map((p, i) =>
+            p === "..." ? (
+              <span key={`e${i}`} style={{ padding: "0 0.2rem", color: "rgba(240,237,230,0.25)", fontSize: "0.72rem" }}>
+                …
+              </span>
+            ) : (
+              <button
+                key={p}
+                type="button"
+                onClick={() => navigate(p as number)}
+                style={{
+                  ...btnBase,
+                  padding: "0.25rem 0.55rem",
+                  fontSize: "0.72rem",
+                  minWidth: "2rem",
+                  border: `1px solid ${p === page ? "rgba(245,182,30,0.5)" : "rgba(245,182,30,0.12)"}`,
+                  background: p === page ? "rgba(245,182,30,0.1)" : "transparent",
+                  color: p === page ? "#F5B61E" : "rgba(240,237,230,0.4)",
+                }}
+              >
+                {p}
+              </button>
+            )
+          )}
 
-        <button
-          type="button"
-          disabled={page === totalPages}
-          onClick={() => navigate(page + 1)}
-          style={{
-            ...btnBase,
-            padding: "0.25rem 0.6rem",
-            fontSize: "0.72rem",
-            color: page === totalPages ? "rgba(240,237,230,0.18)" : "rgba(240,237,230,0.55)",
-            cursor: page === totalPages ? "not-allowed" : "pointer",
-          }}
-        >
-          Next ›
-        </button>
-      </div>
+          <button
+            type="button"
+            disabled={page === totalPages}
+            onClick={() => navigate(page + 1)}
+            style={{
+              ...btnBase,
+              padding: "0.25rem 0.6rem",
+              fontSize: "0.72rem",
+              color: page === totalPages ? "rgba(240,237,230,0.18)" : "rgba(240,237,230,0.55)",
+              cursor: page === totalPages ? "not-allowed" : "pointer",
+            }}
+          >
+            Next ›
+          </button>
+        </div>
+      )}
     </div>
   );
 }

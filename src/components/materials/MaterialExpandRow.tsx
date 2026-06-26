@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import React, { useState, useTransition } from "react";
 import { Pencil, X } from "lucide-react";
 import { MaterialStatus } from "@prisma/client";
 import { updateMaterialStatus, updateMaterialStock } from "@/actions/materials";

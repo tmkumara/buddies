@@ -1,4 +1,3 @@
-import { Suspense } from "react";
 import { requireAuth } from "@/lib/auth-guards";
 import prisma from "@/lib/prisma";
 import TopBar from "@/components/layout/TopBar";
