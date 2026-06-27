@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
 import {
-  LayoutDashboard, Package, Users, BoxSelect, Archive, UserCog, Factory, Radio, FileText,
+  LayoutDashboard, Package, Users, BoxSelect, Archive, UserCog, Factory, Radio, FileText, Boxes,
 } from "lucide-react";
 
 const mainNav = [
@@ -16,8 +16,9 @@ const mainNav = [
 ];
 
 const catalogNav = [
-  { label: "Designs",   href: "/designs",   icon: BoxSelect },
-  { label: "Materials", href: "/materials", icon: Archive },
+  { label: "Designs",      href: "/designs",      icon: BoxSelect },
+  { label: "Materials",    href: "/materials",    icon: Archive },
+  { label: "Stock Items",  href: "/stock-items",  icon: Boxes },
 ];
 
 const adminNav = [

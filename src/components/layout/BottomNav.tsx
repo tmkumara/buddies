@@ -2,14 +2,15 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, ShoppingCart, Package, BoxSelect, Layers } from "lucide-react";
+import { LayoutDashboard, ShoppingCart, Package, BoxSelect, Layers, Boxes } from "lucide-react";
 
 const NAV_ITEMS = [
-  { href: "/dashboard",  label: "Dashboard",  icon: LayoutDashboard },
-  { href: "/orders",     label: "Orders",     icon: ShoppingCart },
-  { href: "/production", label: "Production", icon: Package },
-  { href: "/designs",    label: "Designs",    icon: BoxSelect },
-  { href: "/materials",  label: "Materials",  icon: Layers },
+  { href: "/dashboard",     label: "Dashboard",    icon: LayoutDashboard },
+  { href: "/orders",        label: "Orders",       icon: ShoppingCart },
+  { href: "/production",    label: "Production",   icon: Package },
+  { href: "/designs",       label: "Designs",      icon: BoxSelect },
+  { href: "/materials",     label: "Materials",    icon: Layers },
+  { href: "/stock-items",   label: "Stock Items",  icon: Boxes },
 ] as const;
 
 export default function BottomNav() {
