@@ -15,6 +15,8 @@ const COMPANY = {
   tagline: "Your Vision, Our Mission",
   phone:   "0783085081 / 0707490585",
   email:   "hello.buddieslk@gmail.com",
+  web:     "www.buddiescraft.net",
+  city:    "Athurugiriya, Sri Lanka",
 };
 
 const METHOD_LABEL: Record<string, string> = {
@@ -30,18 +32,25 @@ export default async function PublicInvoicePage({ params }: { params: Promise<{ 
 
   return (
     <div className="inv-sheet">
-      {/* Actions */}
-      <div className="no-print" style={{ display: "flex", gap: "0.75rem", justifyContent: "flex-end", marginBottom: "1.5rem" }}>
-        <a href={pdfUrl} target="_blank" rel="noopener noreferrer" className="inv-btn inv-btn-pdf">⬇ Download PDF</a>
-        <PrintButton />
-      </div>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src="/buddiesicon-removebg.png" alt="" className="inv-watermark" aria-hidden="true" />
+      <div className="inv-content">
+        {/* Actions */}
+        <div className="no-print" style={{ display: "flex", gap: "0.75rem", justifyContent: "flex-end", marginBottom: "1.5rem" }}>
+          <a href={pdfUrl} target="_blank" rel="noopener noreferrer" className="inv-btn inv-btn-pdf">⬇ Download PDF</a>
+          <PrintButton />
+        </div>
 
       {/* Header */}
       <div className="inv-header">
-        <div>
-          <div style={{ fontSize: "1.5rem", fontWeight: 800, color: "#1a1a1a", marginBottom: "0.2rem" }}>{COMPANY.name}</div>
-          <div style={{ fontSize: "0.8rem", color: "#6b7280", marginBottom: "0.75rem" }}>{COMPANY.tagline}</div>
-          <div style={{ fontSize: "0.75rem", color: "#6b7280" }}>{COMPANY.phone} · {COMPANY.email}</div>
+        <div style={{ display: "flex", alignItems: "center", gap: "0.85rem" }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/buddiesicon-removebg.png" alt="Buddies logo" style={{ width: "52px", height: "52px", objectFit: "contain" }} />
+          <div>
+            <div style={{ fontSize: "1.35rem", fontWeight: 800, color: "#1a1a1a", marginBottom: "0.15rem" }}>{COMPANY.name}</div>
+            <div style={{ fontSize: "0.65rem", color: "#6b7280", letterSpacing: "0.07em", marginBottom: "0.5rem" }}>{COMPANY.tagline.toUpperCase()}</div>
+            <div style={{ fontSize: "0.7rem", color: "#6b7280" }}>{COMPANY.phone} · {COMPANY.email}</div>
+          </div>
         </div>
         <div style={{ textAlign: "right" }}>
           <div style={{ fontSize: "1.4rem", fontWeight: 700, marginBottom: "0.25rem" }}>INVOICE</div>
@@ -121,8 +130,10 @@ export default async function PublicInvoicePage({ params }: { params: Promise<{ 
       )}
 
       <div className="inv-divider" />
-      <div style={{ textAlign: "center", fontSize: "0.7rem", color: "#9ca3af", marginTop: "0.75rem" }}>
-        Thank you for choosing {COMPANY.name}! · {COMPANY.phone} · {COMPANY.email}
+      <div className="inv-footer-wrap">
+        <div className="inv-footer-tagline">Thank you for choosing {COMPANY.name}</div>
+        <div>{COMPANY.phone} · {COMPANY.email} · {COMPANY.web} · {COMPANY.city}</div>
+      </div>
       </div>
     </div>
   );

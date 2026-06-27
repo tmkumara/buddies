@@ -10,7 +10,7 @@ export default function InvoiceLayout({ children }: { children: React.ReactNode 
       <style>{`
         #invoice-root * { box-sizing: border-box; }
         #invoice-root { background: #f3f4f6; min-height: 100vh; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #1a1a1a; }
-        .inv-sheet { max-width: 780px; margin: 2rem auto; background: #fff; padding: 3rem 3.5rem; border-radius: 0.5rem; box-shadow: 0 4px 24px rgba(0,0,0,0.08); }
+        .inv-sheet { position: relative; overflow: hidden; max-width: 780px; margin: 2rem auto; background: #fff; padding: 3rem 3.5rem; border-radius: 0.5rem; box-shadow: 0 4px 24px rgba(0,0,0,0.08); }
         @media (max-width: 600px) { .inv-sheet { margin: 0; padding: 1.5rem; border-radius: 0; } }
         .inv-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 2rem; }
         .inv-table { width: 100%; border-collapse: collapse; margin-bottom: 1.25rem; }
@@ -25,6 +25,11 @@ export default function InvoiceLayout({ children }: { children: React.ReactNode 
         .inv-btn-pdf { background: #1a1a1a; color: #fff; }
         .inv-btn-print { background: #f3f4f6; color: #374151; }
         @media print { .no-print { display: none !important; } .inv-sheet { box-shadow: none; margin: 0; padding: 1.5cm; } }
+        .inv-watermark { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 280px; height: 280px; opacity: 0.06; pointer-events: none; z-index: 0; }
+        .inv-content { position: relative; z-index: 1; }
+        .inv-footer-wrap { text-align: center; font-size: 0.7rem; color: #9ca3af; margin-top: 0.75rem; }
+        .inv-footer-tagline { font-style: italic; margin-bottom: 0.15rem; }
+        @media print { .inv-watermark { opacity: 0.04; } }
       `}</style>
       <div id="invoice-root">{children}</div>
     </>
