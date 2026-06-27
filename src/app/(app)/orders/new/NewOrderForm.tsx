@@ -5,7 +5,7 @@ import Link from "next/link";
 import { createOrder } from "@/actions/orders";
 import CustomerSearchCombobox from "@/components/orders/CustomerSearchCombobox";
 import { type CustomerOption } from "@/components/orders/CustomerQuickCreate";
-import OrderItemsEditor, { type BoxTypeOption, type BoxDesignOption, type OrderItem } from "@/components/orders/OrderItemsEditor";
+import OrderItemsEditor, { type BoxTypeOption, type BoxDesignOption, type OrderItem, type StockItemOption } from "@/components/orders/OrderItemsEditor";
 import { calculateQuantityDiscount } from "@/lib/utils/calculations";
 import type { DesignTypeOption, MaterialOption } from "@/components/orders/QuickCreateDesignPanel";
 import { useSession } from "next-auth/react";
@@ -20,12 +20,13 @@ interface Props {
   designTypes: DesignTypeOption[];
   materials:   MaterialOption[];
   leadSources: LeadSource[];
+  stockItems:  StockItemOption[];
 }
 
 const today           = new Date().toISOString().split("T")[0];
 const defaultDelivery = new Date(Date.now() + 7 * 86400000).toISOString().split("T")[0];
 
-export default function NewOrderForm({ customers, boxTypes, boxDesigns, designTypes, materials, leadSources }: Props) {
+export default function NewOrderForm({ customers, boxTypes, boxDesigns, designTypes, materials, leadSources, stockItems }: Props) {
   const { data: session } = useSession();
   const isAdmin = session?.user?.role === "ADMIN";
 
@@ -54,7 +55,11 @@ export default function NewOrderForm({ customers, boxTypes, boxDesigns, designTy
     setLoading(true); setError("");
     const fd = new FormData(e.currentTarget);
     fd.set("customerId", String(customerId));
-    fd.set("itemsJson",  JSON.stringify(items.map(({ key: _k, ...rest }) => rest)));
+    fd.set("itemsJson", JSON.stringify(items.map((i) => ({
+      ...(i.stockItemId > 0 ? { stockItemId: i.stockItemId } : { boxDesignId: i.boxDesignId }),
+      quantity:  i.quantity,
+      unitPrice: i.unitPrice,
+    }))));
     if (leadSourceId) fd.set("leadSourceId", leadSourceId);
     if (discountOverride !== "" && isAdmin) fd.set("discountPercent", discountOverride);
 
@@ -136,6 +141,7 @@ export default function NewOrderForm({ customers, boxTypes, boxDesigns, designTy
               boxDesigns={boxDesigns}
               designTypes={designTypes}
               materials={materials}
+              stockItems={stockItems}
               isAdmin={isAdmin}
               onChange={setItems}
             />

@@ -6,7 +6,7 @@ import NewOrderForm from "./NewOrderForm";
 export default async function NewOrderPage() {
   await requireAuth();
 
-  const [customers, boxTypes, boxDesigns, designTypes, materials, leadSources] = await Promise.all([
+  const [customers, boxTypes, boxDesigns, designTypes, materials, leadSources, stockItems] = await Promise.all([
     prisma.customer.findMany({
       where:   { active: true },
       orderBy: { name: "asc" },
@@ -41,6 +41,11 @@ export default async function NewOrderPage() {
       orderBy: { id: "asc" },
       select:  { id: true, name: true },
     }),
+    prisma.stockItem.findMany({
+      where:   { active: true },
+      select:  { id: true, code: true, name: true, stockUnit: true, unitPrice: true, currentStock: true },
+      orderBy: { name: "asc" },
+    }),
   ]);
 
   const serializedDesigns = boxDesigns.map((bd) => ({
@@ -50,6 +55,12 @@ export default async function NewOrderPage() {
     unitPrice:   Number(bd.unitPrice),
     boxTypeId:   bd.designTypeId,
     boxTypeName: bd.designType.name,
+  }));
+
+  const serialisedStockItems = stockItems.map((si) => ({
+    ...si,
+    unitPrice:    Number(si.unitPrice),
+    currentStock: Number(si.currentStock),
   }));
 
   return (
@@ -63,6 +74,7 @@ export default async function NewOrderPage() {
           designTypes={designTypes}
           materials={materials}
           leadSources={leadSources}
+          stockItems={serialisedStockItems}
         />
       </div>
     </>

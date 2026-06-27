@@ -19,7 +19,7 @@ export default async function EditOrderPage({ params }: { params: Promise<{ id: 
   const editableStatuses = ["DRAFT", "CONFIRMED", "IN_PRODUCTION"];
   if (!editableStatuses.includes(order.status)) redirect(`/orders/${id}`);
 
-  const [boxTypes, boxDesigns, designTypes, materials, leadSources] = await Promise.all([
+  const [boxTypes, boxDesigns, designTypes, materials, leadSources, stockItems] = await Promise.all([
     prisma.designType.findMany({ where: { active: true }, orderBy: { code: "asc" }, select: { id: true, code: true, name: true } }),
     prisma.boxDesign.findMany({
       where: { active: true }, orderBy: { code: "asc" },
@@ -28,6 +28,11 @@ export default async function EditOrderPage({ params }: { params: Promise<{ id: 
     prisma.designType.findMany({ where: { active: true }, orderBy: { code: "asc" }, select: { id: true, code: true, name: true } }),
     prisma.material.findMany({ where: { status: { not: "INACTIVE" } }, orderBy: { code: "asc" }, select: { id: true, code: true, name: true, status: true } }),
     prisma.leadSource.findMany({ where: { active: true }, orderBy: { id: "asc" }, select: { id: true, name: true } }),
+    prisma.stockItem.findMany({
+      where:   { active: true },
+      select:  { id: true, code: true, name: true, stockUnit: true, unitPrice: true, currentStock: true },
+      orderBy: { name: "asc" },
+    }),
   ]);
 
   const serializedOrder = {
@@ -55,6 +60,12 @@ export default async function EditOrderPage({ params }: { params: Promise<{ id: 
     boxTypeId: bd.designTypeId, boxTypeName: bd.designType.name,
   }));
 
+  const serialisedStockItems = stockItems.map((si) => ({
+    ...si,
+    unitPrice:    Number(si.unitPrice),
+    currentStock: Number(si.currentStock),
+  }));
+
   return (
     <>
       <TopBar title={`Edit Order`} />
@@ -66,6 +77,7 @@ export default async function EditOrderPage({ params }: { params: Promise<{ id: 
           designTypes={designTypes}
           materials={materials}
           leadSources={leadSources}
+          stockItems={serialisedStockItems}
           isAdmin={session.user.role === "ADMIN"}
         />
       </div>

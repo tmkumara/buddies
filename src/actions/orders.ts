@@ -68,6 +68,16 @@ export async function createOrder(formData: FormData) {
     }
   }
 
+  const stockItemRows = items.filter((i): i is ValidatedItem & { stockItemId: number } => !!i.stockItemId);
+  const stockItemIds  = [...new Set(stockItemRows.map((i) => i.stockItemId))];
+  const stockItemData = stockItemIds.length > 0
+    ? await prisma.stockItem.findMany({ where: { id: { in: stockItemIds }, active: true }, select: { id: true, name: true, code: true } })
+    : [];
+  const siMap = new Map(stockItemData.map((si) => [si.id, si]));
+  for (const item of stockItemRows) {
+    if (!siMap.has(item.stockItemId)) return { error: `Stock item ID ${item.stockItemId} is inactive or does not exist` };
+  }
+
   const totals = calculateOrderTotals(items, parsed.data.discountPercent ?? null);
   const publicToken = crypto.randomBytes(32).toString("hex");
 
@@ -103,11 +113,11 @@ export async function createOrder(formData: FormData) {
                 lineTotal:   calculateLineTotal(item.unitPrice, item.quantity),
               };
             }
-            // Stock item — name/code snapshot added in Task 9
+            const si = siMap.get(item.stockItemId!)!;
             return {
               stockItemId: item.stockItemId!,
-              designName:  "",
-              designCode:  "",
+              designName:  si.name,
+              designCode:  si.code,
               quantity:    item.quantity,
               unitPrice:   item.unitPrice,
               lineTotal:   calculateLineTotal(item.unitPrice, item.quantity),
@@ -253,6 +263,16 @@ export async function updateOrderItems(orderId: number, formData: FormData) {
     if (!bdMap.has(item.boxDesignId)) return { error: `Box design ID ${item.boxDesignId} not found` };
   }
 
+  const stockItemRows = items.filter((i): i is ValidatedItem & { stockItemId: number } => !!i.stockItemId);
+  const stockItemIds  = [...new Set(stockItemRows.map((i) => i.stockItemId))];
+  const stockItemData = stockItemIds.length > 0
+    ? await prisma.stockItem.findMany({ where: { id: { in: stockItemIds }, active: true }, select: { id: true, name: true, code: true } })
+    : [];
+  const siMap = new Map(stockItemData.map((si) => [si.id, si]));
+  for (const item of stockItemRows) {
+    if (!siMap.has(item.stockItemId)) return { error: `Stock item ID ${item.stockItemId} is inactive or does not exist` };
+  }
+
   // Read optional discount override from formData
   const discountOverrideRaw = formData.get("discountPercent") as string | null;
   const discountOverride = discountOverrideRaw ? parseFloat(discountOverrideRaw) : null;
@@ -292,13 +312,13 @@ export async function updateOrderItems(orderId: number, formData: FormData) {
           },
         });
       }
-      // Stock item — name/code snapshot added in Task 9
+      const si = siMap.get(item.stockItemId!)!;
       return prisma.orderItem.create({
         data: {
           orderId,
           stockItemId: item.stockItemId!,
-          designName:  "",
-          designCode:  "",
+          designName:  si.name,
+          designCode:  si.code,
           quantity:    item.quantity,
           unitPrice:   item.unitPrice,
           lineTotal:   calculateLineTotal(item.unitPrice, item.quantity),

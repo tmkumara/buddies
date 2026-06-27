@@ -4,7 +4,7 @@ import { useState, FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { updateOrderItems } from "@/actions/orders";
-import OrderItemsEditor, { type BoxTypeOption, type BoxDesignOption, type OrderItem } from "@/components/orders/OrderItemsEditor";
+import OrderItemsEditor, { type BoxTypeOption, type BoxDesignOption, type OrderItem, type StockItemOption } from "@/components/orders/OrderItemsEditor";
 import { calculateQuantityDiscount } from "@/lib/utils/calculations";
 import type { DesignTypeOption, MaterialOption } from "@/components/orders/QuickCreateDesignPanel";
 import Combobox from "@/components/ui/Combobox";
@@ -21,10 +21,11 @@ interface Props {
   designTypes: DesignTypeOption[];
   materials:   MaterialOption[];
   leadSources: { id: number; name: string }[];
+  stockItems:  StockItemOption[];
   isAdmin:     boolean;
 }
 
-export default function EditOrderForm({ order, boxTypes, boxDesigns, designTypes, materials, leadSources, isAdmin }: Props) {
+export default function EditOrderForm({ order, boxTypes, boxDesigns, designTypes, materials, leadSources, stockItems, isAdmin }: Props) {
   const router = useRouter();
   const [error,   setError]   = useState("");
   const [loading, setLoading] = useState(false);
@@ -48,7 +49,11 @@ export default function EditOrderForm({ order, boxTypes, boxDesigns, designTypes
 
     setLoading(true); setError("");
     const fd = new FormData(e.currentTarget);
-    fd.set("itemsJson", JSON.stringify(items.map(({ key: _k, ...rest }) => rest)));
+    fd.set("itemsJson", JSON.stringify(items.map((i) => ({
+      ...(i.stockItemId > 0 ? { stockItemId: i.stockItemId } : { boxDesignId: i.boxDesignId }),
+      quantity:  i.quantity,
+      unitPrice: i.unitPrice,
+    }))));
     if (discountOverride !== "" && isAdmin) fd.set("discountPercent", discountOverride);
 
     const result = await updateOrderItems(order.id, fd);
@@ -110,6 +115,7 @@ export default function EditOrderForm({ order, boxTypes, boxDesigns, designTypes
               boxDesigns={boxDesigns}
               designTypes={designTypes}
               materials={materials}
+              stockItems={stockItems}
               isAdmin={isAdmin}
               onChange={setItems}
               initialItems={order.items}
