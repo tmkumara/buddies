@@ -3,34 +3,25 @@ import path from "path";
 
 const { Document, Page, Text, View, StyleSheet, Image } = ReactPDF;
 
-const LOGO = path.join(process.cwd(), "public/buddiesicon.png");
+const LOGO = path.join(process.cwd(), "public/buddiesicon-removebg.png");
 
 const COMPANY = {
-  name:  "Buddies",
-  tag:   "Your Vision, Our Mission",
-  phone: "0783085081 / 0707490585",
-  email: "hello.buddieslk@gmail.com",
-  web:   "www.buddiescraft.net",
-  city:  "Athurugiriya, Sri Lanka",
+  name:    "Buddies",
+  tagline: "Your Vision, Our Mission",
+  phone:   "0783085081 / 0707490585",
+  email:   "hello.buddieslk@gmail.com",
+  web:     "www.buddiescraft.net",
+  city:    "Athurugiriya, Sri Lanka",
 };
 
 const METHOD: Record<string, string> = {
   CASH: "Cash", BANK_TRANSFER: "Bank Transfer", CHEQUE: "Cheque",
 };
 
-// Solid hex equivalents for dark theme (react-pdf has limited rgba support)
 const C = {
-  bg:       "#0d0d0d",
-  card:     "#141414",
-  gold:     "#F5B61E",
-  goldDim:  "#8A6A10",
-  text:     "#F0EDE6",
-  muted:    "#7A7570",
-  dim:      "#3A3530",
-  sep:      "#1E1C14",
-  red:      "#F87171",
-  green:    "#4ADE80",
-  codeBg:   "#1A1914",
+  bg: "#0d0d0d", card: "#141414", gold: "#F5B61E", goldDim: "#8A6A10",
+  text: "#F0EDE6", muted: "#7A7570", dim: "#3A3530", sep: "#1E1C14",
+  red: "#F87171", green: "#4ADE80", codeBg: "#1A1914",
 };
 
 const s = StyleSheet.create({
@@ -38,61 +29,26 @@ const s = StyleSheet.create({
   row:     { flexDirection: "row" },
   between: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" },
   divider: { height: 0.5, backgroundColor: C.dim, marginVertical: 12 },
-
-  // Header
-  logo:    { width: 56, height: 56, objectFit: "contain" },
+  logo:    { width: 48, height: 48, objectFit: "contain" },
   invWord: { fontSize: 7, letterSpacing: 1.2, color: C.muted, textAlign: "right" },
   invNo:   { fontSize: 13, fontFamily: "Helvetica-Bold", color: C.text, textAlign: "right", marginTop: 3 },
-
-  // Labels / values
   lbl:     { fontSize: 6.5, letterSpacing: 0.9, color: C.muted, marginBottom: 2.5, textTransform: "uppercase" },
   val:     { fontSize: 9, color: C.text },
   bold:    { fontFamily: "Helvetica-Bold" },
   gold:    { color: C.gold },
-
-  // Table
   thCell:  { fontSize: 7, letterSpacing: 0.7, color: C.muted, fontFamily: "Helvetica-Bold", padding: "5pt 6pt" },
   tdCell:  { fontSize: 8.5, color: C.text, padding: "5.5pt 6pt", borderBottom: `0.5pt solid ${C.sep}` },
-
-  // Totals
   totRow:  { flexDirection: "row", justifyContent: "space-between", marginBottom: 3 },
   netRow:  { flexDirection: "row", justifyContent: "space-between", borderTop: `1pt solid ${C.gold}`, paddingTop: 5, marginTop: 4 },
-
-  footer:  { textAlign: "center", fontSize: 7, color: C.muted, marginTop: 8 },
+  footer:  { textAlign: "center", fontSize: 7, color: C.muted, marginTop: 4 },
 });
 
 export interface OrderPDFData {
-  orderNo:        string;
-  orderDate:      string;
-  deliveryDate:   string | null;
-  status:         string;
-  remarks:        string | null;
-  customer: {
-    name:         string;
-    phone:        string;
-    phone2:       string | null;
-    email:        string | null;
-    addressLine:  string | null;
-  };
-  items: {
-    designCode:   string;
-    designName:   string;
-    quantity:     number;
-    unitPrice:    number;
-    lineTotal:    number;
-  }[];
-  totalAmount:    number;
-  discountAmount: number;
-  discountPct:    number;
-  netAmount:      number;
-  totalPaid:      number;
-  balance:        number;
-  payments: {
-    paymentDate:  string;
-    method:       string;
-    referenceNo:  string | null;
-    amount:       number;
-  }[];
+  orderNo: string; orderDate: string; deliveryDate: string | null; status: string; remarks: string | null;
+  customer: { name: string; phone: string; phone2: string | null; email: string | null; addressLine: string | null };
+  items: { designCode: string; designName: string; quantity: number; unitPrice: number; lineTotal: number }[];
+  totalAmount: number; discountAmount: number; discountPct: number; netAmount: number; totalPaid: number; balance: number;
+  payments: { paymentDate: string; method: string; referenceNo: string | null; amount: number }[];
 }
 
 const COL = ["18%", "37%", "10%", "17%", "18%"] as const;
@@ -102,9 +58,23 @@ export function OrderInvoicePDF({ data }: { data: OrderPDFData }) {
     <Document>
       <Page size="A4" style={s.page}>
 
-        {/* ── Header ── */}
+        {/* Watermark — behind all content */}
+        <View style={{ position: "absolute", top: 299, left: 175, width: 245, height: 245, opacity: 0.04 }}>
+          <Image src={LOGO} style={{ width: 245, height: 245, objectFit: "contain" }} />
+        </View>
+
+        {/* Header */}
         <View style={[s.between, { marginBottom: 4 }]}>
-          <Image src={LOGO} style={s.logo} />
+          <View style={s.row}>
+            <Image src={LOGO} style={s.logo} />
+            <View style={{ marginLeft: 10 }}>
+              <Text style={{ fontSize: 15, fontFamily: "Helvetica-Bold", color: C.gold, letterSpacing: 1 }}>{COMPANY.name}</Text>
+              <Text style={{ fontSize: 6.5, color: C.muted, letterSpacing: 0.8, marginTop: 2 }}>{COMPANY.tagline.toUpperCase()}</Text>
+              <Text style={{ fontSize: 7, color: C.muted, marginTop: 5 }}>
+                {COMPANY.phone}  ·  {COMPANY.email}  ·  {COMPANY.web}  ·  {COMPANY.city}
+              </Text>
+            </View>
+          </View>
           <View style={{ alignItems: "flex-end" }}>
             <Text style={s.invWord}>INVOICE</Text>
             <Text style={s.invNo}>{data.orderNo}</Text>
@@ -118,21 +88,16 @@ export function OrderInvoicePDF({ data }: { data: OrderPDFData }) {
           </View>
         </View>
 
-        {/* Company contact */}
-        <Text style={{ fontSize: 7, color: C.muted, marginBottom: 2 }}>
-          {COMPANY.phone}  ·  {COMPANY.email}  ·  {COMPANY.web}  ·  {COMPANY.city}
-        </Text>
-
         <View style={s.divider} />
 
-        {/* ── Bill To + Dates ── */}
+        {/* Bill To */}
         <View style={[s.between, { marginBottom: 14 }]}>
           <View style={{ flex: 1 }}>
             <Text style={s.lbl}>Bill To</Text>
             <Text style={[s.bold, { fontSize: 11, color: C.text, marginBottom: 2 }]}>{data.customer.name}</Text>
             <Text style={{ fontSize: 8, color: C.muted }}>{data.customer.phone}</Text>
-            {data.customer.phone2     && <Text style={{ fontSize: 8, color: C.muted }}>{data.customer.phone2}</Text>}
-            {data.customer.email      && <Text style={{ fontSize: 8, color: C.muted }}>{data.customer.email}</Text>}
+            {data.customer.phone2      && <Text style={{ fontSize: 8, color: C.muted }}>{data.customer.phone2}</Text>}
+            {data.customer.email       && <Text style={{ fontSize: 8, color: C.muted }}>{data.customer.email}</Text>}
             {data.customer.addressLine && <Text style={{ fontSize: 8, color: C.muted, marginTop: 2 }}>{data.customer.addressLine}</Text>}
           </View>
         </View>
@@ -145,15 +110,13 @@ export function OrderInvoicePDF({ data }: { data: OrderPDFData }) {
           </View>
         )}
 
-        {/* ── Items table ── */}
+        {/* Items table */}
         <View style={{ marginBottom: 14 }}>
-          {/* Header row */}
           <View style={[s.row, { backgroundColor: "#1A1914", borderBottom: `0.5pt solid ${C.dim}` }]}>
             {["CODE", "DESIGN NAME", "QTY", "UNIT PRICE", "LINE TOTAL"].map((h, i) => (
               <Text key={h} style={[s.thCell, { width: COL[i], textAlign: i >= 2 ? "right" : "left" }]}>{h}</Text>
             ))}
           </View>
-
           {data.items.map((item, idx) => (
             <View key={idx} style={[s.row, { backgroundColor: idx % 2 === 0 ? C.card : "#111111" }]}>
               <Text style={[s.tdCell, { width: COL[0], color: C.gold, fontFamily: "Helvetica-Bold", fontSize: 8 }]}>{item.designCode}</Text>
@@ -165,13 +128,10 @@ export function OrderInvoicePDF({ data }: { data: OrderPDFData }) {
           ))}
         </View>
 
-        {/* ── Totals ── */}
+        {/* Totals */}
         <View style={{ alignItems: "flex-end", marginBottom: 14 }}>
           <View style={{ width: "220pt" }}>
-            <View style={s.totRow}>
-              <Text style={{ color: C.muted }}>Subtotal</Text>
-              <Text>Rs. {data.totalAmount.toFixed(2)}</Text>
-            </View>
+            <View style={s.totRow}><Text style={{ color: C.muted }}>Subtotal</Text><Text>Rs. {data.totalAmount.toFixed(2)}</Text></View>
             {data.discountAmount > 0 && (
               <View style={s.totRow}>
                 <Text style={{ color: C.muted }}>Discount ({data.discountPct.toFixed(1)}%)</Text>
@@ -195,7 +155,7 @@ export function OrderInvoicePDF({ data }: { data: OrderPDFData }) {
           </View>
         </View>
 
-        {/* ── Payment history ── */}
+        {/* Payment history */}
         {data.payments.length > 0 && (
           <View style={{ marginBottom: 14 }}>
             <Text style={[s.lbl, { marginBottom: 4 }]}>Payment History</Text>
@@ -210,10 +170,10 @@ export function OrderInvoicePDF({ data }: { data: OrderPDFData }) {
           </View>
         )}
 
-        <View style={s.divider} />
-        <Text style={s.footer}>
-          Thank you for choosing {COMPANY.name}  ·  {COMPANY.phone}  ·  {COMPANY.email}
-        </Text>
+        {/* Footer */}
+        <View style={[s.divider, { borderTopColor: "#C8940A", borderTopWidth: 0.5 }]} />
+        <Text style={[s.footer, { fontFamily: "Helvetica-Oblique", marginBottom: 2 }]}>Thank you for choosing {COMPANY.name}</Text>
+        <Text style={s.footer}>{COMPANY.phone}  ·  {COMPANY.email}  ·  {COMPANY.web}  ·  {COMPANY.city}</Text>
       </Page>
     </Document>
   );
