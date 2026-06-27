@@ -46,7 +46,7 @@ export default async function InvoicePage({ params }: { params: Promise<{ id: st
         body { margin: 0; background: #0d0d0d; font-family: 'Plus Jakarta Sans', system-ui, sans-serif; }
         .inv-page { min-height: 100vh; background: #0d0d0d; padding: 0 1rem 3rem; }
         .inv-nav  { max-width: 820px; margin: 0 auto; padding: 1.25rem 0; display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
-        .inv-sheet { max-width: 820px; margin: 0 auto; background: #141414; border: 1px solid rgba(245,182,30,0.15); border-radius: 0.75rem; padding: 2.5rem 2.75rem; color: #F0EDE6; }
+        .inv-sheet { max-width: 820px; margin: 0 auto; background: #141414; border: 1px solid rgba(245,182,30,0.15); border-radius: 0.75rem; padding: 2.5rem 2.75rem; color: #F0EDE6; position: relative; overflow: hidden; }
         .inv-co-name { font-size: 1.6rem; font-weight: 800; color: #F5B61E; letter-spacing: 0.06em; margin: 0; }
         .inv-co-tag  { font-size: 0.62rem; color: rgba(240,237,230,0.3); letter-spacing: 0.1em; margin: 0.15rem 0 0; text-transform: uppercase; }
         .inv-divider { border: none; border-top: 1px solid rgba(245,182,30,0.09); margin: 1.4rem 0; }
@@ -61,7 +61,10 @@ export default async function InvoicePage({ params }: { params: Promise<{ id: st
         .inv-table tbody tr:last-child td { border-bottom: none; }
         .inv-tot-row { display: flex; justify-content: space-between; font-size: 0.82rem; padding: 0.3rem 0; color: rgba(240,237,230,0.5); }
         .inv-net-row { display: flex; justify-content: space-between; font-size: 1.05rem; font-weight: 800; color: #F5B61E; border-top: 1px solid rgba(245,182,30,0.22); padding-top: 0.6rem; margin-top: 0.35rem; }
-        .inv-footer  { text-align: center; font-size: 0.63rem; color: rgba(240,237,230,0.18); margin-top: 2rem; padding-top: 1rem; border-top: 1px solid rgba(245,182,30,0.06); letter-spacing: 0.06em; }
+        .inv-footer  { text-align: center; font-size: 0.63rem; color: rgba(240,237,230,0.18); margin-top: 2rem; padding-top: 1rem; border-top: 1px solid rgba(245,182,30,0.3); letter-spacing: 0.06em; }
+        .inv-footer-tagline { font-style: italic; margin-bottom: 0.2rem; }
+        .inv-watermark { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 280px; height: 280px; opacity: 0.04; pointer-events: none; z-index: 0; }
+        .inv-content   { position: relative; z-index: 1; }
         .dl-btn      { display: inline-flex; align-items: center; gap: 0.4rem; background: rgba(245,182,30,0.1); border: 1px solid rgba(245,182,30,0.3); border-radius: 0.5rem; padding: 0.55rem 1.25rem; color: #F5B61E; font-size: 0.75rem; letter-spacing: 0.07em; font-weight: 600; text-decoration: none; cursor: pointer; }
         .dl-btn:hover { background: rgba(245,182,30,0.18); }
       `}</style>
@@ -79,12 +82,16 @@ export default async function InvoicePage({ params }: { params: Promise<{ id: st
 
         {/* Sheet */}
         <div className="inv-sheet">
+          {/* Watermark */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/buddiesicon-removebg.png" alt="" className="inv-watermark" aria-hidden="true" />
 
-          {/* Header */}
+          <div className="inv-content">
+            {/* Header */}
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "0.5rem" }}>
             <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/buddiesicon.png" alt="Buddies logo" style={{ width: "56px", height: "56px", objectFit: "contain", borderRadius: "0.35rem" }} />
+              <img src="/buddiesicon-removebg.png" alt="Buddies logo" style={{ width: "56px", height: "56px", objectFit: "contain", borderRadius: "0.35rem" }} />
               <div>
                 <h1 className="inv-co-name">{COMPANY.name}</h1>
                 <p className="inv-co-tag">{COMPANY.tag}</p>
@@ -196,8 +203,10 @@ export default async function InvoicePage({ params }: { params: Promise<{ id: st
             </div>
           )}
 
-          <div className="inv-footer">
-            Thank you for choosing {COMPANY.name} · {COMPANY.phone} · {COMPANY.email}
+            <div className="inv-footer">
+              <div className="inv-footer-tagline">Thank you for choosing {COMPANY.name}</div>
+              <div>{COMPANY.phone} · {COMPANY.email} · {COMPANY.web} · {COMPANY.city}</div>
+            </div>
           </div>
         </div>
       </div>
