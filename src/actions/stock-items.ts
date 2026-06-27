@@ -99,6 +99,7 @@ export async function recordPurchase(formData: FormData) {
 }
 
 export async function deductStockItemsForOrder(orderId: number, userId: number): Promise<{ warnings: string[] }> {
+  await requireAuth();
   const order = await prisma.order.findUnique({
     where:   { id: orderId },
     include: { items: { include: { stockItem: true } } },
@@ -137,6 +138,7 @@ export async function deductStockItemsForOrder(orderId: number, userId: number):
 }
 
 export async function restoreStockItemsForOrder(orderId: number, userId: number): Promise<void> {
+  await requireAuth();
   const entries = await prisma.stockItemEntry.findMany({
     where: { orderId, type: "SOLD" },
   });
