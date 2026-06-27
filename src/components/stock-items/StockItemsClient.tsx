@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
 import { Package, TrendingDown, AlertTriangle, Archive } from "lucide-react";
 import StatChip from "@/components/ui/StatChip";
 import StockItemSlideOver from "./StockItemSlideOver";
@@ -51,7 +51,7 @@ export default function StockItemsClient({ items, stats }: Props) {
       <div className="stat-strip">
         <StatChip label="Total SKUs"  value={stats.total}    icon={Package} />
         <StatChip label="In Stock"    value={stats.inStock}  icon={Archive}        color="green" />
-        <StatChip label="Low Stock"   value={stats.lowStock} icon={AlertTriangle}  color="amber" />
+        <StatChip label="Low Stock"   value={stats.lowStock} icon={AlertTriangle}  color="#FBBF24" />
         <StatChip label="Out of Stock" value={stats.outStock} icon={TrendingDown}  color="red" />
       </div>
 
@@ -94,9 +94,8 @@ export default function StockItemsClient({ items, stats }: Props) {
                 const status = stockStatus(item);
                 const isExpanded = expandedId === item.id;
                 return (
-                  <>
+                  <React.Fragment key={item.id}>
                     <tr
-                      key={item.id}
                       style={{ cursor: "pointer", background: isExpanded ? "rgba(245,182,30,0.04)" : undefined }}
                       onClick={() => setExpandedId(isExpanded ? null : item.id)}
                     >
@@ -129,13 +128,13 @@ export default function StockItemsClient({ items, stats }: Props) {
                       </td>
                     </tr>
                     {isExpanded && (
-                      <tr key={`${item.id}-expand`}>
+                      <tr>
                         <td colSpan={8} style={{ padding: 0, background: "rgba(20,20,20,0.6)" }}>
                           <StockItemExpandRow item={item} />
                         </td>
                       </tr>
                     )}
-                  </>
+                  </React.Fragment>
                 );
               })}
             </tbody>
