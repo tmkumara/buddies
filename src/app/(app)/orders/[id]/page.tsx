@@ -45,7 +45,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
   const discountPct    = totalAmount > 0 ? Math.round((discountAmount / totalAmount) * 100 * 100) / 100 : 0;
 
   const hasPendingMaterial = order.items.some(
-    (item) => item.boxDesign.material.status === "PENDING"
+    (item) => item.boxDesign?.material?.status === "PENDING"
   );
 
   const payments = order.payments.map((p) => ({

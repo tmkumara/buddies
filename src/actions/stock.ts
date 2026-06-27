@@ -20,6 +20,7 @@ export async function deductStockForOrder(orderId: number, userId: number): Prom
 
   for (const item of order.items) {
     const bd  = item.boxDesign;
+    if (!bd || !bd.material) continue;    // guard for items without material (stock items)
     const mat = bd.material;
 
     const boxesPerSheet = calculateBoxesPerSheet({

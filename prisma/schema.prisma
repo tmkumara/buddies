@@ -38,6 +38,7 @@ model User {
   statusChanges      OrderStatusHistory[]
   payments           Payment[]
   stockAdjustments   StockAdjustment[]
+  stockItemEntries   StockItemEntry[]
 
   @@map("users")
 }
@@ -170,6 +171,7 @@ model Order {
   statusHistory    OrderStatusHistory[]
   payments         Payment[]
   stockAdjustments StockAdjustment[]
+  stockItemEntries StockItemEntry[]
 
   @@index([status])
   @@index([orderDate])
@@ -180,19 +182,22 @@ model Order {
 }
 
 model OrderItem {
-  id          Int       @id @default(autoincrement())
-  orderId     Int       @map("order_id")
-  order       Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  boxDesignId Int       @map("box_design_id")
-  boxDesign   BoxDesign @relation(fields: [boxDesignId], references: [id])
-  designName  String    @map("design_name") @db.VarChar(150)
-  designCode  String    @map("design_code") @db.VarChar(50)
+  id          Int        @id @default(autoincrement())
+  orderId     Int        @map("order_id")
+  order       Order      @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  boxDesignId Int?       @map("box_design_id")
+  boxDesign   BoxDesign? @relation(fields: [boxDesignId], references: [id])
+  stockItemId Int?       @map("stock_item_id")
+  stockItem   StockItem? @relation(fields: [stockItemId], references: [id])
+  designName  String     @map("design_name") @db.VarChar(150)
+  designCode  String     @map("design_code") @db.VarChar(50)
   quantity    Int
-  unitPrice   Decimal   @map("unit_price") @db.Decimal(10, 2)
-  lineTotal   Decimal   @map("line_total") @db.Decimal(12, 2)
+  unitPrice   Decimal    @map("unit_price") @db.Decimal(10, 2)
+  lineTotal   Decimal    @map("line_total") @db.Decimal(12, 2)
 
   @@index([orderId])
   @@index([boxDesignId])
+  @@index([stockItemId])
   @@map("order_item")
 }
 
@@ -237,6 +242,49 @@ model Payment {
 enum StockAdjustmentType {
   MANUAL
   AUTO_PRODUCTION
+}
+
+enum StockItemEntryType {
+  PURCHASE
+  SOLD
+  ADJUSTMENT
+}
+
+model StockItem {
+  id           Int              @id @default(autoincrement())
+  code         String           @unique @db.VarChar(50)
+  name         String           @db.VarChar(150)
+  description  String?          @db.VarChar(255)
+  stockUnit    String           @map("stock_unit") @db.VarChar(50)
+  unitPrice    Decimal          @map("unit_price") @db.Decimal(10, 2)
+  currentStock Decimal          @default(0) @map("current_stock") @db.Decimal(10, 2)
+  minStock     Decimal          @default(0) @map("min_stock") @db.Decimal(10, 2)
+  active       Boolean          @default(true) @map("is_active")
+  createdAt    DateTime         @default(now()) @map("created_at") @db.DateTime
+  updatedAt    DateTime         @updatedAt @map("updated_at") @db.DateTime
+  orderItems   OrderItem[]
+  stockEntries StockItemEntry[]
+
+  @@index([active])
+  @@map("stock_item")
+}
+
+model StockItemEntry {
+  id             Int                @id @default(autoincrement())
+  stockItemId    Int                @map("stock_item_id")
+  stockItem      StockItem          @relation(fields: [stockItemId], references: [id])
+  quantityChange Decimal            @map("quantity_change") @db.Decimal(10, 2)
+  type           StockItemEntryType
+  orderId        Int?               @map("order_id")
+  order          Order?             @relation(fields: [orderId], references: [id])
+  note           String?            @db.VarChar(255)
+  changedById    Int?               @map("changed_by_id")
+  changedBy      User?              @relation(fields: [changedById], references: [id])
+  changedAt      DateTime           @default(now()) @map("changed_at") @db.DateTime
+
+  @@index([stockItemId])
+  @@index([orderId])
+  @@map("stock_item_entry")
 }
 
 model StockAdjustment {
