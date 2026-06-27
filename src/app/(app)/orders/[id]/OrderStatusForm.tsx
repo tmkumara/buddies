@@ -24,8 +24,16 @@ export default function OrderStatusForm({ orderId, currentStatus }: Props) {
     if (!newStatus) return;
     setLoading(true); setError(""); setSuccess("");
     const result = await updateOrderStatus(orderId, newStatus, note);
-    if (result.error) { setError(result.error); setLoading(false); }
-    else { setSuccess(`Status updated to ${STATUS_LABELS[newStatus as OrderStatusKey]}`); setNote(""); setLoading(false); }
+    if ("error" in result && result.error) { setError(result.error); setLoading(false); }
+    else {
+      const warn = "warnings" in result && (result as { warnings?: string[] }).warnings;
+      setSuccess(
+        warn && warn.length > 0
+          ? `Status updated. Stock warning: ${warn.join("; ")}`
+          : `Status updated to ${STATUS_LABELS[newStatus as OrderStatusKey]}`
+      );
+      setNote(""); setLoading(false);
+    }
   }
 
   const input: React.CSSProperties = {

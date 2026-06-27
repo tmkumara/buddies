@@ -12,6 +12,7 @@ import {
 } from "@/lib/validations/order";
 import { generateOrderNo } from "@/lib/utils/order-no";
 import { deductStockForOrder } from "@/actions/stock";
+import { deductStockItemsForOrder, restoreStockItemsForOrder } from "@/actions/stock-items";
 import { calculateOrderTotals, calculateLineTotal } from "@/lib/utils/calculations";
 import { isValidTransition, type OrderStatusKey } from "@/lib/utils/status-transitions";
 import { OrderStatus } from "@prisma/client";
@@ -192,6 +193,18 @@ export async function updateOrderStatus(
 
   if (newStatus === "IN_PRODUCTION") {
     await deductStockForOrder(orderId, Number(session.user.id));
+  }
+
+  if (newStatus === "CONFIRMED") {
+    const { warnings } = await deductStockItemsForOrder(orderId, Number(session.user.id));
+    if (warnings.length > 0) {
+      return { success: true as const, warnings };
+    }
+  }
+
+  const cancelFromStatuses = ["CONFIRMED", "IN_PRODUCTION", "READY"];
+  if (newStatus === "CANCELLED" && cancelFromStatuses.includes(order.status)) {
+    await restoreStockItemsForOrder(orderId, Number(session.user.id));
   }
 
   return { success: true as const };
