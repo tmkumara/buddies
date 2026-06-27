@@ -20,9 +20,19 @@ export interface BoxDesignOption {
   boxTypeName:    string;
 }
 
+export interface StockItemOption {
+  id:           number;
+  code:         string;
+  name:         string;
+  stockUnit:    string;
+  unitPrice:    number;
+  currentStock: number;
+}
+
 export interface OrderItem {
   key:          string;
-  boxDesignId:  number;
+  boxDesignId:  number;    // 0 = unset
+  stockItemId:  number;    // 0 = unset (exactly one of boxDesignId/stockItemId will be non-zero)
   designName:   string;
   designCode:   string;
   quantity:     number;
@@ -35,6 +45,7 @@ interface Props {
   boxDesigns:   BoxDesignOption[];
   designTypes:  DesignTypeOption[];
   materials:    MaterialOption[];
+  stockItems?:  StockItemOption[];
   isAdmin:      boolean;
   onChange:     (items: OrderItem[]) => void;
   initialItems?: OrderItem[];
@@ -44,12 +55,13 @@ let keyCounter = 0;
 function nextKey() { return `item-${++keyCounter}`; }
 
 export default function OrderItemsEditor({
-  boxTypes, boxDesigns, designTypes, materials, isAdmin, onChange, initialItems,
+  boxDesigns, designTypes, materials, stockItems = [], isAdmin, onChange, initialItems,
 }: Props) {
   const [items,           setItems]           = useState<OrderItem[]>(initialItems ?? []);
   const [localDesigns,    setLocalDesigns]    = useState<BoxDesignOption[]>(boxDesigns);
   const [panelOpenForKey, setPanelOpenForKey] = useState<string | null>(null);
-  const [selectedTypes,   setSelectedTypes]   = useState<Record<string, number>>({});
+  // Tracks per-row item type: "design" | "stock" (needed when both IDs are 0 after type switch)
+  const [rowTypes,        setRowTypes]        = useState<Record<string, "design" | "stock">>({});
 
   const bdMap = new Map(localDesigns.map((bd) => [bd.id, bd]));
 
@@ -57,16 +69,21 @@ export default function OrderItemsEditor({
 
   function addItem() {
     const key = nextKey();
-    update([...items, { key, boxDesignId: 0, designName: "", designCode: "", quantity: 1, unitPrice: 0, lineTotal: 0 }]);
+    update([...items, { key, boxDesignId: 0, stockItemId: 0, designName: "", designCode: "", quantity: 1, unitPrice: 0, lineTotal: 0 }]);
   }
 
-  function removeItem(key: string) { update(items.filter((i) => i.key !== key)); }
+  function removeItem(key: string) {
+    setRowTypes((prev) => { const n = { ...prev }; delete n[key]; return n; });
+    update(items.filter((i) => i.key !== key));
+  }
 
-  function handleTypeChange(key: string, typeId: string) {
-    setSelectedTypes((prev) => ({ ...prev, [key]: Number(typeId) }));
-    // Reset design when type changes
+  function handleItemTypeChange(key: string, newType: "design" | "stock") {
+    setRowTypes((prev) => ({ ...prev, [key]: newType }));
+    // Reset IDs and price when type switches
     update(items.map((i) => i.key !== key ? i : {
-      ...i, boxDesignId: 0, designName: "", designCode: "", unitPrice: 0, lineTotal: 0,
+      ...i,
+      boxDesignId: 0, stockItemId: 0,
+      designName: "", designCode: "", unitPrice: 0, lineTotal: 0,
     }));
   }
 
@@ -77,9 +94,27 @@ export default function OrderItemsEditor({
       if (i.key !== key) return i;
       const unitPrice = bd?.unitPrice ?? 0;
       return {
-        ...i, boxDesignId: id,
+        ...i, boxDesignId: id, stockItemId: 0,
         designName:  bd?.name  ?? "",
         designCode:  bd?.code  ?? "",
+        unitPrice,
+        lineTotal: Math.round(unitPrice * i.quantity * 100) / 100,
+      };
+    }));
+  }
+
+  function handleStockItemChange(key: string, rawId: string) {
+    const id = Number(rawId);
+    const si = stockItems.find((s) => s.id === id);
+    update(items.map((i) => {
+      if (i.key !== key) return i;
+      const unitPrice = si?.unitPrice ?? 0;
+      return {
+        ...i,
+        boxDesignId: 0,
+        stockItemId: id,
+        designName:  si?.name  ?? "",
+        designCode:  si?.code  ?? "",
         unitPrice,
         lineTotal: Math.round(unitPrice * i.quantity * 100) / 100,
       };
@@ -141,8 +176,8 @@ export default function OrderItemsEditor({
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead>
                 <tr>
-                  <th style={th}>BOX TYPE</th>
-                  <th style={th}>BOX DESIGN</th>
+                  <th style={{ ...th, width: "130px" }}>ITEM TYPE</th>
+                  <th style={th}>ITEM</th>
                   <th style={{ ...th, width: "80px" }}>QTY</th>
                   <th style={{ ...th, width: "110px" }}>UNIT PRICE</th>
                   <th style={{ ...th, width: "110px", textAlign: "right" }}>LINE TOTAL</th>
@@ -151,42 +186,63 @@ export default function OrderItemsEditor({
               </thead>
               <tbody>
                 {items.map((item) => {
-                  const typeId = selectedTypes[item.key] ?? 0;
-                  const filteredDesigns = typeId
-                    ? localDesigns.filter((bd) => bd.boxTypeId === typeId)
-                    : localDesigns;
+                  // Determine current row mode: stock if stockItemId>0, else check rowTypes, else default "design"
+                  const itemType: "design" | "stock" =
+                    item.stockItemId > 0 ? "stock" : (rowTypes[item.key] ?? "design");
                   const qtyWarn = item.quantity > 0 && item.quantity < 10;
 
                   return (
                     <tr key={item.key}>
+                      {/* ITEM TYPE selector */}
                       <td style={td}>
-                        <Combobox
-                          name={`__type_${item.key}`}
-                          placeholder="— All Types —"
-                          value={typeId || ""}
-                          options={[
-                            { value: "", label: "— All Types —" },
-                            ...boxTypes.map((bt) => ({ value: bt.id, label: `${bt.code} — ${bt.name}` })),
-                          ]}
-                          onChange={(v) => handleTypeChange(item.key, String(v))}
-                        />
+                        <select
+                          value={itemType}
+                          onChange={(e) => handleItemTypeChange(item.key, e.target.value as "design" | "stock")}
+                          style={sel}
+                        >
+                          <option value="design">Box Design</option>
+                          <option value="stock">Stock Item</option>
+                        </select>
                       </td>
+
+                      {/* ITEM picker — design or stock branch */}
                       <td style={td}>
-                        <div style={{ display: "flex", gap: "0.4rem", alignItems: "center" }}>
-                          <div style={{ flex: 1 }}>
-                            <Combobox
-                              name={`__design_${item.key}`}
-                              placeholder="— Select Design —"
-                              value={item.boxDesignId || ""}
-                              options={filteredDesigns.map((bd) => ({ value: bd.id, label: bd.code, meta: bd.name }))}
-                              onChange={(v) => handleBoxDesignChange(item.key, String(v))}
-                            />
+                        {itemType === "stock" ? (
+                          <Combobox
+                            name={`__stock_${item.key}`}
+                            placeholder="— Select Stock Item —"
+                            value={item.stockItemId || ""}
+                            options={stockItems.map((si) => ({
+                              value: si.id,
+                              label: si.code,
+                              meta:  `${si.name} (${si.currentStock} ${si.stockUnit})`,
+                            }))}
+                            onChange={(v) => handleStockItemChange(item.key, String(v))}
+                          />
+                        ) : (
+                          <div style={{ display: "flex", gap: "0.4rem", alignItems: "center" }}>
+                            <div style={{ flex: 1 }}>
+                              <Combobox
+                                name={`__design_${item.key}`}
+                                placeholder="— Select Design —"
+                                value={item.boxDesignId || ""}
+                                options={localDesigns.map((bd) => ({ value: bd.id, label: bd.code, meta: bd.name }))}
+                                onChange={(v) => handleBoxDesignChange(item.key, String(v))}
+                              />
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => setPanelOpenForKey(item.key)}
+                              title="Create new design"
+                              style={{ background: "rgba(245,182,30,0.07)", border: "1px solid rgba(245,182,30,0.2)", borderRadius: "0.4rem", padding: "0.4rem 0.5rem", color: "rgba(245,182,30,0.7)", cursor: "pointer", flexShrink: 0, display: "flex", alignItems: "center" }}
+                            >
+                              <Sparkles size={13} />
+                            </button>
                           </div>
-                          <button type="button" onClick={() => setPanelOpenForKey(item.key)} title="Create new design" style={{ background: "rgba(245,182,30,0.07)", border: "1px solid rgba(245,182,30,0.2)", borderRadius: "0.4rem", padding: "0.4rem 0.5rem", color: "rgba(245,182,30,0.7)", cursor: "pointer", flexShrink: 0, display: "flex", alignItems: "center" }}>
-                            <Sparkles size={13} />
-                          </button>
-                        </div>
+                        )}
                       </td>
+
+                      {/* QTY */}
                       <td style={td}>
                         <div>
                           <input
@@ -202,6 +258,8 @@ export default function OrderItemsEditor({
                           )}
                         </div>
                       </td>
+
+                      {/* UNIT PRICE */}
                       <td style={td}>
                         <input
                           type="number" min="0" step="0.01" value={item.unitPrice}
@@ -211,9 +269,13 @@ export default function OrderItemsEditor({
                           style={{ ...sel, width: "100%", cursor: isAdmin ? "text" : "not-allowed", opacity: isAdmin ? 1 : 0.7 }}
                         />
                       </td>
+
+                      {/* LINE TOTAL */}
                       <td style={{ ...td, textAlign: "right", color: "#F5B61E", fontWeight: 600, fontSize: "0.85rem" }}>
                         {item.lineTotal.toFixed(2)}
                       </td>
+
+                      {/* REMOVE */}
                       <td style={{ ...td, textAlign: "center" }}>
                         <button type="button" onClick={() => removeItem(item.key)} style={{ background: "none", border: "none", cursor: "pointer", padding: "0.2rem", color: "#F87171" }} title="Remove">
                           <Trash2 size={14} />

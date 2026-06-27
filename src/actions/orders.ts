@@ -41,7 +41,8 @@ export async function createOrder(formData: FormData) {
     return { error: "At least one order item is required" };
   }
 
-  const items: { boxDesignId: number; quantity: number; unitPrice: number }[] = [];
+  type ValidatedItem = { boxDesignId?: number; stockItemId?: number; quantity: number; unitPrice: number };
+  const items: ValidatedItem[] = [];
   for (const item of rawItems) {
     const p = orderItemInputSchema.safeParse(item);
     if (!p.success) return { error: p.error.issues[0]?.message ?? "Invalid item" };
@@ -52,15 +53,16 @@ export async function createOrder(formData: FormData) {
     return { error: "Delivery date cannot be before order date" };
   }
 
-  // Load box designs for name/code snapshots
-  const boxDesignIds = [...new Set(items.map((i) => i.boxDesignId))];
+  // Load box designs for name/code snapshots (design items only)
+  const designItems = items.filter((i): i is ValidatedItem & { boxDesignId: number } => !!i.boxDesignId);
+  const boxDesignIds = [...new Set(designItems.map((i) => i.boxDesignId))];
   const boxDesigns = await prisma.boxDesign.findMany({
     where: { id: { in: boxDesignIds }, active: true },
     select: { id: true, name: true, code: true },
   });
   const bdMap = new Map(boxDesigns.map((bd) => [bd.id, bd]));
 
-  for (const item of items) {
+  for (const item of designItems) {
     if (!bdMap.has(item.boxDesignId)) {
       return { error: `Box design ID ${item.boxDesignId} is inactive or does not exist` };
     }
@@ -90,11 +92,22 @@ export async function createOrder(formData: FormData) {
         publicToken,
         items: {
           create: items.map((item) => {
-            const bd = bdMap.get(item.boxDesignId)!;
+            if (item.boxDesignId) {
+              const bd = bdMap.get(item.boxDesignId)!;
+              return {
+                boxDesignId: item.boxDesignId,
+                designName:  bd.name,
+                designCode:  bd.code,
+                quantity:    item.quantity,
+                unitPrice:   item.unitPrice,
+                lineTotal:   calculateLineTotal(item.unitPrice, item.quantity),
+              };
+            }
+            // Stock item — name/code snapshot added in Task 9
             return {
-              boxDesignId: item.boxDesignId,
-              designName:  bd.name,
-              designCode:  bd.code,
+              stockItemId: item.stockItemId!,
+              designName:  "",
+              designCode:  "",
               quantity:    item.quantity,
               unitPrice:   item.unitPrice,
               lineTotal:   calculateLineTotal(item.unitPrice, item.quantity),
@@ -221,20 +234,22 @@ export async function updateOrderItems(orderId: number, formData: FormData) {
     return { error: "At least one order item is required" };
   }
 
-  const items: { boxDesignId: number; quantity: number; unitPrice: number }[] = [];
+  type ValidatedItem = { boxDesignId?: number; stockItemId?: number; quantity: number; unitPrice: number };
+  const items: ValidatedItem[] = [];
   for (const item of rawItems) {
     const p = orderItemInputSchema.safeParse(item);
     if (!p.success) return { error: p.error.issues[0]?.message ?? "Invalid item" };
     items.push(p.data);
   }
 
-  const boxDesignIds = [...new Set(items.map((i) => i.boxDesignId))];
+  const designItems = items.filter((i): i is ValidatedItem & { boxDesignId: number } => !!i.boxDesignId);
+  const boxDesignIds = [...new Set(designItems.map((i) => i.boxDesignId))];
   const boxDesigns = await prisma.boxDesign.findMany({
     where:  { id: { in: boxDesignIds }, active: true },
     select: { id: true, name: true, code: true },
   });
   const bdMap = new Map(boxDesigns.map((bd) => [bd.id, bd]));
-  for (const item of items) {
+  for (const item of designItems) {
     if (!bdMap.has(item.boxDesignId)) return { error: `Box design ID ${item.boxDesignId} not found` };
   }
 
@@ -263,13 +278,27 @@ export async function updateOrderItems(orderId: number, formData: FormData) {
       },
     }),
     ...items.map((item) => {
-      const bd = bdMap.get(item.boxDesignId)!;
+      if (item.boxDesignId) {
+        const bd = bdMap.get(item.boxDesignId)!;
+        return prisma.orderItem.create({
+          data: {
+            orderId,
+            boxDesignId: item.boxDesignId,
+            designName:  bd.name,
+            designCode:  bd.code,
+            quantity:    item.quantity,
+            unitPrice:   item.unitPrice,
+            lineTotal:   calculateLineTotal(item.unitPrice, item.quantity),
+          },
+        });
+      }
+      // Stock item — name/code snapshot added in Task 9
       return prisma.orderItem.create({
         data: {
           orderId,
-          boxDesignId: item.boxDesignId,
-          designName:  bd.name,
-          designCode:  bd.code,
+          stockItemId: item.stockItemId!,
+          designName:  "",
+          designCode:  "",
           quantity:    item.quantity,
           unitPrice:   item.unitPrice,
           lineTotal:   calculateLineTotal(item.unitPrice, item.quantity),

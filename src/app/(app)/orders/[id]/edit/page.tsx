@@ -40,6 +40,7 @@ export default async function EditOrderPage({ params }: { params: Promise<{ id: 
     items: order.items.map((item) => ({
       key:         `item-${item.id}`,
       boxDesignId: item.boxDesignId ?? 0,
+      stockItemId: item.stockItemId ?? 0,
       designName:  item.designName,
       designCode:  item.designCode,
       quantity:    item.quantity,

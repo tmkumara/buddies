@@ -47,8 +47,8 @@ export default function NewOrderForm({ customers, boxTypes, boxDesigns, designTy
     e.preventDefault();
     if (!customerId) { setError("Please select a customer."); return; }
     if (items.length === 0) { setError("Add at least one order item."); return; }
-    if (items.some((i) => !i.boxDesignId || i.quantity < 1)) {
-      setError("All items must have a box design and quantity ≥ 1."); return;
+    if (items.some((i) => (!i.boxDesignId && !i.stockItemId) || i.quantity < 1)) {
+      setError("All items must have a box design or stock item selected, and quantity ≥ 1."); return;
     }
 
     setLoading(true); setError("");

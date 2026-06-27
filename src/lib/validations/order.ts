@@ -1,10 +1,14 @@
 import { z } from "zod";
 
 export const orderItemInputSchema = z.object({
-  boxDesignId: z.coerce.number().int().positive("Box design required"),
-  quantity:    z.coerce.number().int().positive("Quantity must be at least 1"),
-  unitPrice:   z.coerce.number().nonnegative("Unit price must be non-negative"),
-});
+  boxDesignId: z.number().int().positive().optional(),
+  stockItemId: z.number().int().positive().optional(),
+  quantity:    z.number().int().min(1),
+  unitPrice:   z.number().min(0),
+}).refine(
+  (d) => (d.boxDesignId !== undefined) !== (d.stockItemId !== undefined),
+  { message: "Exactly one of boxDesignId or stockItemId must be provided" }
+);
 
 export const createOrderSchema = z.object({
   customerId:      z.coerce.number().int().positive("Customer is required"),
