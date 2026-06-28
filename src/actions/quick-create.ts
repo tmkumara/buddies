@@ -104,8 +104,18 @@ export async function quickCreateBoxDesign(formData: FormData) {
         id: true, code: true, name: true, unitPrice: true,
         designTypeId: true,
         designType: { select: { name: true } },
+        lengthCm: true, widthCm: true, heightCm: true,
+        lengthIn: true, widthIn: true, heightIn: true,
       },
     });
+    const inDims = [bd.lengthIn, bd.widthIn, bd.heightIn]
+      .filter((v): v is NonNullable<typeof v> => v != null)
+      .map((v) => Number(v).toFixed(1));
+    const cmDims = [bd.lengthCm, bd.widthCm, bd.heightCm]
+      .filter((v): v is NonNullable<typeof v> => v != null)
+      .map((v) => Number(v).toFixed(0));
+    const sizeStr = inDims.length > 0 ? inDims.join("×") + " in"
+      : cmDims.length > 0 ? cmDims.join("×") + " cm" : undefined;
     return {
       data: {
         id:          bd.id,
@@ -114,6 +124,7 @@ export async function quickCreateBoxDesign(formData: FormData) {
         unitPrice:   Number(bd.unitPrice),
         boxTypeId:   bd.designTypeId,
         boxTypeName: bd.designType.name,
+        sizeStr,
       },
     };
   } catch (e: unknown) {

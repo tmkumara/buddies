@@ -48,15 +48,16 @@ The Prisma query for order items must include:
 include: {
   boxDesign: {
     select: {
-      boxType: { select: { name: true } },
-      sizeStr: true,   // or compute from dimensions
+      designType: { select: { name: true } },  // "boxTypeName" in UI comes from designType.name
+      lengthCm: true, widthCm: true, heightCm: true,
+      lengthIn: true, widthIn: true, heightIn: true,
       material: { select: { status: true } },
     }
   }
 }
 ```
 
-Check Prisma schema: `BoxDesign` may have a computed `sizeStr` or the raw dimension fields. If no `sizeStr` field exists, compute it inline from `lengthCm/widthCm/heightCm` or `lengthIn/widthIn/heightIn`. Pass through as `boxTypeName` and `sizeStr` on each item in the render.
+No `sizeStr` field exists in the schema — compute it in the page server component from raw dimension fields (prefer `in` if available, else `cm`), same pattern as `src/lib/invoice-data.ts` lines 67–81. Pass `boxTypeName` (`item.boxDesign.designType.name`) and computed `sizeStr` into the render.
 
 ---
 

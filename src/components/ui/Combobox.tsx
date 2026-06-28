@@ -7,6 +7,7 @@ export interface ComboboxOption {
   value: string | number;
   label: string;
   meta?: string;
+  subtitle?: string;
 }
 
 export interface ComboboxProps {
@@ -64,7 +65,8 @@ export default function Combobox({
     onChange?.(opt.value);
   }
 
-  const selectedLabel = options.find((o) => String(o.value) === String(selected))?.label;
+  const selectedOpt   = options.find((o) => String(o.value) === String(selected));
+  const selectedLabel = selectedOpt?.label;
 
   return (
     <div ref={containerRef} style={{ position: "relative", width: "100%" }}>
@@ -98,9 +100,27 @@ export default function Combobox({
           opacity: disabled ? 0.5 : 1,
         }}
       >
-        <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-          {selectedLabel ?? placeholder}
-        </span>
+        {selectedOpt?.subtitle ? (
+          <span style={{ flex: 1, minWidth: 0 }}>
+            <span style={{ display: "flex", alignItems: "baseline", gap: "0.45rem" }}>
+              <span style={{ color: "#F5B61E", fontWeight: 700, fontSize: "0.78rem", letterSpacing: "0.04em", flexShrink: 0 }}>
+                {selectedOpt.label}
+              </span>
+              {selectedOpt.meta && (
+                <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  {selectedOpt.meta}
+                </span>
+              )}
+            </span>
+            <span style={{ display: "block", fontSize: "0.62rem", color: "rgba(240,237,230,0.3)", marginTop: "0.1rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              {selectedOpt.subtitle}
+            </span>
+          </span>
+        ) : (
+          <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            {selectedLabel ?? placeholder}
+          </span>
+        )}
         <ChevronDown
           size={14}
           style={{
@@ -153,7 +173,7 @@ export default function Combobox({
                   aria-selected={isSel}
                   onClick={() => handleSelect(opt)}
                   style={{
-                    display: "flex", alignItems: "center", justifyContent: "space-between",
+                    display: "flex", alignItems: opt.subtitle ? "flex-start" : "center", justifyContent: "space-between",
                     padding: "0.55rem 1rem", fontSize: "0.82rem", cursor: "pointer",
                     color: isSel ? "#F5B61E" : "rgba(240,237,230,0.62)",
                     background: isSel ? "rgba(245,182,30,0.1)" : "transparent",
@@ -164,11 +184,21 @@ export default function Combobox({
                   onMouseEnter={(e) => { if (!isSel) { (e.currentTarget as HTMLElement).style.background = "rgba(245,182,30,0.06)"; (e.currentTarget as HTMLElement).style.color = "rgba(240,237,230,0.9)"; } }}
                   onMouseLeave={(e) => { if (!isSel) { (e.currentTarget as HTMLElement).style.background = "transparent"; (e.currentTarget as HTMLElement).style.color = "rgba(240,237,230,0.62)"; } }}
                 >
-                  <span>
-                    {opt.label}
-                    {opt.meta && <span style={{ marginLeft: "0.4rem", fontSize: "0.7rem", color: "rgba(240,237,230,0.28)" }}>{opt.meta}</span>}
-                  </span>
-                  {isSel && <Check size={11} style={{ color: "#F5B61E", flexShrink: 0 }} />}
+                  {opt.subtitle ? (
+                    <span style={{ flex: 1, minWidth: 0 }}>
+                      <span style={{ display: "flex", alignItems: "baseline", gap: "0.45rem" }}>
+                        <span style={{ fontWeight: 700, color: "#F5B61E", fontSize: "0.75rem", letterSpacing: "0.04em", flexShrink: 0 }}>{opt.label}</span>
+                        {opt.meta && <span style={{ color: isSel ? "#F5B61E" : "rgba(240,237,230,0.8)", fontSize: "0.82rem" }}>{opt.meta}</span>}
+                      </span>
+                      <span style={{ display: "block", fontSize: "0.62rem", color: "rgba(240,237,230,0.3)", marginTop: "0.1rem" }}>{opt.subtitle}</span>
+                    </span>
+                  ) : (
+                    <span>
+                      {opt.label}
+                      {opt.meta && <span style={{ marginLeft: "0.4rem", fontSize: "0.7rem", color: "rgba(240,237,230,0.28)" }}>{opt.meta}</span>}
+                    </span>
+                  )}
+                  {isSel && <Check size={11} style={{ color: "#F5B61E", flexShrink: 0, marginTop: opt.subtitle ? "0.2rem" : 0 }} />}
                 </li>
               );
             })}

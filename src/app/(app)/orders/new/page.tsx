@@ -24,6 +24,8 @@ export default async function NewOrderPage() {
         id: true, code: true, name: true, unitPrice: true,
         designTypeId: true,
         designType: { select: { name: true } },
+        lengthCm: true, widthCm: true, heightCm: true,
+        lengthIn: true, widthIn: true, heightIn: true,
       },
     }),
     prisma.designType.findMany({
@@ -49,14 +51,25 @@ export default async function NewOrderPage() {
     prisma.deliveryMethod.findMany({ where: { active: true }, orderBy: { id: "asc" }, select: { id: true, name: true } }),
   ]);
 
-  const serializedDesigns = boxDesigns.map((bd) => ({
-    id:          bd.id,
-    code:        bd.code,
-    name:        bd.name,
-    unitPrice:   Number(bd.unitPrice),
-    boxTypeId:   bd.designTypeId,
-    boxTypeName: bd.designType.name,
-  }));
+  const serializedDesigns = boxDesigns.map((bd) => {
+    const inDims = [bd.lengthIn, bd.widthIn, bd.heightIn]
+      .filter((v): v is NonNullable<typeof v> => v != null)
+      .map((v) => Number(v).toFixed(1));
+    const cmDims = [bd.lengthCm, bd.widthCm, bd.heightCm]
+      .filter((v): v is NonNullable<typeof v> => v != null)
+      .map((v) => Number(v).toFixed(0));
+    const sizeStr = inDims.length > 0 ? inDims.join("×") + " in"
+      : cmDims.length > 0 ? cmDims.join("×") + " cm" : undefined;
+    return {
+      id:          bd.id,
+      code:        bd.code,
+      name:        bd.name,
+      unitPrice:   Number(bd.unitPrice),
+      boxTypeId:   bd.designTypeId,
+      boxTypeName: bd.designType.name,
+      sizeStr,
+    };
+  });
 
   const serialisedStockItems = stockItems.map((si) => ({
     ...si,
