@@ -39,7 +39,7 @@ export default function NotificationBell() {
     try {
       const res = await fetch("/api/notifications");
       if (res.ok) setData(await res.json());
-    } catch {}
+    } catch (err) { console.error("[NotificationBell] poll failed:", err); }
   }, []);
 
   useEffect(() => {
@@ -76,14 +76,17 @@ export default function NotificationBell() {
   }
 
   async function handleRowClick(n: NotificationItem) {
-    if (!n.read) {
-      await markNotificationRead(n.id);
-      setData((prev) => ({
-        unreadCount: Math.max(0, prev.unreadCount - 1),
-        notifications: prev.notifications.map((x) => x.id === n.id ? { ...x, read: true } : x),
-      }));
+    try {
+      if (!n.read) {
+        await markNotificationRead(n.id);
+        setData((prev) => ({
+          unreadCount: Math.max(0, prev.unreadCount - 1),
+          notifications: prev.notifications.map((x) => x.id === n.id ? { ...x, read: true } : x),
+        }));
+      }
+    } finally {
+      setOpen(false);
     }
-    setOpen(false);
   }
 
   const { unreadCount, notifications } = data;
@@ -199,6 +202,15 @@ export default function NotificationBell() {
                     }}>
                       {n.title}
                     </p>
+                    {n.body && (
+                      <p style={{
+                        fontSize: "0.72rem", color: "#7A7570",
+                        margin: "0 0 0.15rem",
+                        overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                      }}>
+                        {n.body}
+                      </p>
+                    )}
                     <p style={{ fontSize: "0.67rem", color: "rgba(240,237,230,0.3)", margin: 0 }}>
                       {n.type.replace(/_/g, " ")} · {timeAgo(n.createdAt)}
                     </p>

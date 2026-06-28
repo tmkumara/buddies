@@ -50,6 +50,7 @@ export async function notificationService(payload: NotificationPayload): Promise
   ) {
     const resend = getResend();
     if (resend) {
+      // Fire-and-forget: safe on persistent Node server; use next/server after() for serverless deployments
       (async () => {
         try {
           const invoiceData = await getInvoiceDataById(payload.orderId!);
