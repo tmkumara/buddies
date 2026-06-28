@@ -1,69 +1,104 @@
 #!/bin/bash
-# deploy.sh — Run on the server to deploy the Next.js OMS.
-# Prerequisites: Node 20+, npm, pm2, git, mysqldump
+# deploy.sh — Production deployment script for giftbox-oms on buddiescraft.duckdns.org
 # Usage: bash deploy.sh
-set -e
+#
+# Safety rules (do not remove):
+#   - Never drops, truncates, resets, or seeds production data
+#   - Never runs prisma migrate reset or prisma db push --force
+#   - Never stops the old Java app automatically
+#   - Prisma migrate deploy is DISABLED by default (see note below)
+#   - Always creates a MySQL backup before any changes
+set -euo pipefail
 
 APP_DIR=/opt/giftbox-oms
-OLD_APP_DIR=/opt/giftbox
-BACKUP_FILE="$OLD_APP_DIR/backup-$(date +%Y%m%d-%H%M%S).sql"
-DB_NAME=giftbox_oms
-DB_USER=giftbox
-DB_PASS=giftbox
+DB_NAME=buddiescraft_db
+DB_USER=buddiescraft_user
+DB_PASS='Giftbox@2026'
 DB_HOST=127.0.0.1
-DB_PORT=3306    # plain MySQL default; change to 3307 if your install uses that
+DB_PORT=3306
+# @ in password must be percent-encoded in the connection URL
+DATABASE_URL="mysql://buddiescraft_user:Giftbox%402026@${DB_HOST}:${DB_PORT}/${DB_NAME}?allowPublicKeyRetrieval=true&ssl=false"
+BACKUP_FILE="/root/buddiescraft_db_backup_$(date +%F_%H%M%S).sql"
 
-# ─────────────────────────────────────────────────────────────
-echo "==> [1/6] Backing up MySQL database to $BACKUP_FILE ..."
-mysqldump -h $DB_HOST -P $DB_PORT -u $DB_USER -p"$DB_PASS" $DB_NAME > "$BACKUP_FILE"
-echo "    Backup saved: $BACKUP_FILE ($(du -sh $BACKUP_FILE | cut -f1))"
+# ── Step 1: Backup ────────────────────────────────────────────────────────────
+echo "==> [1/7] Backing up database to $BACKUP_FILE ..."
+mysqldump --no-tablespaces -u "$DB_USER" -p"$DB_PASS" "$DB_NAME" > "$BACKUP_FILE"
+echo "    Backup saved: $BACKUP_FILE ($(du -sh "$BACKUP_FILE" | cut -f1))"
 
-# ─────────────────────────────────────────────────────────────
-echo "==> [2/6] Stopping old Java app (if running) ..."
-pkill -f giftbox-oms.jar 2>/dev/null && echo "    Java app stopped." || echo "    Java app was not running."
-
-# ─────────────────────────────────────────────────────────────
-echo "==> [3/6] Cloning / updating repo ..."
-if [ -d "$APP_DIR/.git" ]; then
-  git -C "$APP_DIR" pull origin main
-else
-  git clone https://github.com/mktharindu/giftbox-oms.git "$APP_DIR"
-fi
-
-# Copy .env (must exist on server already)
-if [ ! -f "$APP_DIR/.env" ]; then
-  echo "ERROR: $APP_DIR/.env not found. Create it from .env.production.example first."
-  exit 1
-fi
-
-# ─────────────────────────────────────────────────────────────
-echo "==> [4/6] Installing dependencies and building ..."
+# ── Step 2: Pull latest code ──────────────────────────────────────────────────
+echo "==> [2/7] Pulling latest code ..."
 cd "$APP_DIR"
-npm ci
+git pull
+
+# ── Step 3: Write .env (safe — preserves existing secrets) ───────────────────
+echo "==> [3/7] Updating .env ..."
+
+# Generate NEXTAUTH_SECRET only if missing
+if [ -f .env ] && grep -q "^NEXTAUTH_SECRET=" .env && [ -n "$(grep '^NEXTAUTH_SECRET=' .env | cut -d= -f2-)" ]; then
+  NEXTAUTH_SECRET_VALUE=$(grep '^NEXTAUTH_SECRET=' .env | cut -d= -f2-)
+  echo "    NEXTAUTH_SECRET already present — keeping existing value."
+else
+  NEXTAUTH_SECRET_VALUE=$(openssl rand -base64 32)
+  echo "    Generated new NEXTAUTH_SECRET."
+fi
+
+# Preserve RESEND_API_KEY if already present
+if [ -f .env ] && grep -q "^RESEND_API_KEY=" .env && [ -n "$(grep '^RESEND_API_KEY=' .env | cut -d= -f2-)" ]; then
+  RESEND_API_KEY_VALUE=$(grep '^RESEND_API_KEY=' .env | cut -d= -f2-)
+  echo "    RESEND_API_KEY already present — keeping existing value."
+else
+  RESEND_API_KEY_VALUE="re_REPLACE_ME"
+  echo "    WARNING: RESEND_API_KEY not set. Update .env manually with the real key."
+fi
+
+cat > .env << EOF
+DATABASE_URL="${DATABASE_URL}"
+NEXTAUTH_SECRET=${NEXTAUTH_SECRET_VALUE}
+NEXTAUTH_URL=https://buddiescraft.duckdns.org
+RESEND_API_KEY=${RESEND_API_KEY_VALUE}
+RESEND_FROM_EMAIL=Buddies <hello.buddieslk@gmail.com>
+EOF
+
+# ── Step 4: Install dependencies ─────────────────────────────────────────────
+echo "==> [4/7] Installing dependencies ..."
+if [ -f package-lock.json ]; then
+  npm ci
+else
+  npm install
+fi
+
+# ── Step 5: Generate Prisma client + build Next.js ───────────────────────────
+echo "==> [5/7] Generating Prisma client and building ..."
 npx prisma generate
 npm run build
 
-# ─────────────────────────────────────────────────────────────
-echo "==> [5/6] Running Prisma migrations ..."
-# Baseline existing migrations so Prisma doesn't try to CREATE TABLE on existing data.
-# Only needs to run ONCE on first deploy; safe to re-run (resolve is idempotent).
-npx prisma migrate resolve --applied "20260607061220_init"             2>/dev/null || true
-npx prisma migrate resolve --applied "20260607073618_add_schema_improvements"  2>/dev/null || true
-npx prisma migrate resolve --applied "20260622182845_add_must_change_password" 2>/dev/null || true
-
-# Apply any NEW migrations added after initial deploy
-npx prisma migrate deploy
-
-# ─────────────────────────────────────────────────────────────
-echo "==> [6/6] (Re)starting app with PM2 ..."
-if pm2 list | grep -q giftbox-oms; then
-  pm2 reload giftbox-oms
+# ── Step 6: Prisma migration status (visibility only) ────────────────────────
+echo "==> [6/7] Checking Prisma migration status ..."
+npx prisma migrate status || true
+# NOTE: prisma migrate deploy is intentionally NOT run automatically.
+# This production database was originally created by the old Spring Boot app
+# and later manually aligned with the Prisma schema. Future migrations must
+# be reviewed and baselined before applying. To apply migrations manually:
+#   RUN_PRISMA_MIGRATE=true bash deploy.sh
+if [ "${RUN_PRISMA_MIGRATE:-false}" = "true" ]; then
+  echo "    RUN_PRISMA_MIGRATE=true detected — running prisma migrate deploy ..."
+  npx prisma migrate deploy
 else
-  pm2 start ecosystem.config.js
-  pm2 save
+  echo "    Skipping prisma migrate deploy (set RUN_PRISMA_MIGRATE=true to enable)."
 fi
 
+# ── Step 7: Restart app + reload Nginx ───────────────────────────────────────
+echo "==> [7/7] Restarting app and reloading Nginx ..."
+if pm2 list | grep -q "giftbox-oms"; then
+  pm2 restart giftbox-oms --update-env
+else
+  pm2 start ecosystem.config.js
+fi
+pm2 save
+
+nginx -t
+systemctl reload nginx
+
 echo ""
-echo "Done! App is running on port 3000."
-echo "Check logs: pm2 logs giftbox-oms"
-echo "Tail errors: pm2 logs giftbox-oms --err"
+echo "Deployment complete! App running on https://buddiescraft.duckdns.org"
+echo "Tail logs: pm2 logs giftbox-oms"

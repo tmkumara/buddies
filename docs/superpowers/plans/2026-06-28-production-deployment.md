@@ -4,25 +4,26 @@
 
 **Goal:** Replace the running Java Spring Boot OMS with the new Next.js 16 app on `buddiescraft.duckdns.org` without any data loss.
 
-**Architecture:** Next.js app runs as a PM2 process on the same server, reading from the existing plain MySQL install. Nginx reverse-proxies port 80/443 → 3000. Prisma migrations are baselined so existing tables are not re-created.
+**Architecture:** Next.js app runs as a PM2 process on the same VPS, reading from the existing plain MySQL install. Nginx reverse-proxies HTTPS → 127.0.0.1:3000. Prisma migrations are opt-in (not auto-applied) because this DB was originally created by the old Spring Boot app.
 
-**Tech Stack:** Node.js 20, PM2, Next.js 16, Prisma 7, MySQL (plain install), Nginx
+**Tech Stack:** Node.js 20, PM2, Next.js 16, Prisma 7, MySQL (plain install, port 3306), Nginx
 
 ## Global Constraints
 
-- MySQL credentials: user=`giftbox`, password=`giftbox`, db=`giftbox_oms`, host=`127.0.0.1`
-- MySQL port: `3306` (plain install default) — change to `3307` in `deploy.sh` if your server uses a custom port
+- DB name: `buddiescraft_db`, user: `buddiescraft_user`, password: `Giftbox@2026`
+- DATABASE_URL password uses percent-encoded `@` → `%40`
+- DB host: `127.0.0.1:3306`
 - App port: `3000` (PM2 → Nginx proxies to this)
 - App dir on server: `/opt/giftbox-oms`
-- Old Java app dir: `/opt/giftbox`
-- Server domain: `buddiescraft.duckdns.org`
+- Old Java app dir: `/opt/giftbox` (do NOT touch unless asked)
+- Server domain: `https://buddiescraft.duckdns.org`
 - Node.js minimum version: 20
+- **Never** run `prisma migrate reset`, `prisma db push --force`, or any destructive DB command
+- **Never** stop the old Java app automatically
 
 ---
 
 ## Pre-flight: Server Checks (run BEFORE deploy)
-
-These confirm the server has everything deploy.sh needs.
 
 - [ ] **Check Node.js version**
 
@@ -38,47 +39,46 @@ pm2 -v
 ```
 If missing: `sudo npm install -g pm2`
 
-- [ ] **Check MySQL is running**
+- [ ] **Check MySQL**
 
 ```bash
-mysql -h 127.0.0.1 -u giftbox -pgiftbox -e "SELECT 1;" giftbox_oms
+mysql -h 127.0.0.1 -u buddiescraft_user -p'Giftbox@2026' -e "SELECT 1;" buddiescraft_db
 ```
 Expected: `+---+\n| 1 |\n+---+\n| 1 |`
 
-- [ ] **Check git**
+- [ ] **Check repo dir exists or create it**
 
 ```bash
-git --version
+ls /opt/giftbox-oms || git clone https://github.com/mktharindu/giftbox-oms.git /opt/giftbox-oms
 ```
-
-- [ ] **Confirm DB port** — if the command above fails try `-P 3307`. Update `DB_PORT` in `deploy.sh` accordingly.
 
 ---
 
-## Task 1: Push the new code to the server
+## Task 1: Push deployment files from local machine
 
 **Files:**
-- Modified: `next.config.ts` — removed standalone (plain PM2 deploy)
+- Modified: `next.config.ts`
+- Modified: `deploy.sh` — full deployment script with real production values
+- Modified: `.env.production.example` — template with real DB name
 - Created: `ecosystem.config.js` — PM2 app definition
-- Created: `deploy.sh` — full deployment script
-- Created: `.env.production.example` — env var template
 
-- [ ] **Step 1: Commit and push deployment files**
+- [ ] **Step 1: Commit and push**
 
-On your local machine:
 ```bash
 git add next.config.ts ecosystem.config.js deploy.sh .env.production.example
-git commit -m "feat: add PM2 + deploy script for production server"
+git commit -m "feat: add PM2 deploy script for production VPS"
 git push origin main
 ```
 
-- [ ] **Step 2: Create .env on the server**
+---
 
-SSH into the server, then:
+## Task 2: Create .env on the server (first-time only)
+
+- [ ] **Step 1: SSH into server, create .env**
+
 ```bash
-mkdir -p /opt/giftbox-oms
 cat > /opt/giftbox-oms/.env << 'EOF'
-DATABASE_URL="mysql://giftbox:giftbox@127.0.0.1:3306/giftbox_oms?allowPublicKeyRetrieval=true&ssl=false"
+DATABASE_URL="mysql://buddiescraft_user:Giftbox%402026@127.0.0.1:3306/buddiescraft_db?allowPublicKeyRetrieval=true&ssl=false"
 NEXTAUTH_SECRET=<run: openssl rand -base64 32>
 NEXTAUTH_URL=https://buddiescraft.duckdns.org
 RESEND_API_KEY=re_M8x18AyM_KewjcPV5sWZFzhx5c3jLrisF
@@ -86,48 +86,43 @@ RESEND_FROM_EMAIL=Buddies <hello.buddieslk@gmail.com>
 EOF
 ```
 
-> Generate NEXTAUTH_SECRET with: `openssl rand -base64 32`
+> `deploy.sh` preserves NEXTAUTH_SECRET and RESEND_API_KEY on subsequent runs — never overwrites existing values.
 
 ---
 
-## Task 2: Run the deploy script
+## Task 3: Run deploy.sh
 
-- [ ] **Step 1: Download deploy.sh on the server**
+- [ ] **Step 1: Run on the server**
 
 ```bash
-# From /opt/giftbox-oms (or wherever you cloned the repo)
-bash /opt/giftbox-oms/deploy.sh
+cd /opt/giftbox-oms
+bash deploy.sh
 ```
 
-The script does these steps in order:
-1. Backs up MySQL → `/opt/giftbox/backup-YYYYMMDD-HHMMSS.sql`
-2. Stops the Java app
-3. Clones/pulls the repo into `/opt/giftbox-oms`
-4. `npm ci` + `prisma generate` + `npm run build`
-5. Baselines existing Prisma migrations (prevents CREATE TABLE errors on existing data)
-6. Applies any new migrations
-7. Starts app with PM2
+What it does:
+1. `mysqldump --no-tablespaces` → `/root/buddiescraft_db_backup_DATE.sql`
+2. `git pull`
+3. Updates `.env` safely (preserves existing secrets)
+4. `npm ci` (or `npm install` if no lockfile)
+5. `npx prisma generate` + `npm run build`
+6. `npx prisma migrate status` (visibility only — does NOT apply migrations)
+7. `pm2 restart giftbox-oms --update-env` (or `pm2 start` if first run)
+8. `pm2 save` + `nginx -t` + `systemctl reload nginx`
 
-- [ ] **Step 2: Verify app is running**
+- [ ] **Step 2: Verify app**
 
 ```bash
 pm2 list
 # Expected: giftbox-oms  online
 curl http://localhost:3000
 # Expected: HTML response
-```
-
-- [ ] **Step 3: Check logs for errors**
-
-```bash
-pm2 logs giftbox-oms --lines 50
-# Expected: "Ready - started server on 0.0.0.0:3000"
-# No database errors
+pm2 logs giftbox-oms --lines 30
+# Expected: "Ready - started server on 0.0.0.0:3000", no DB errors
 ```
 
 ---
 
-## Task 3: Update Nginx to point to new app
+## Task 4: Configure Nginx
 
 - [ ] **Step 1: Edit Nginx config**
 
@@ -135,11 +130,20 @@ pm2 logs giftbox-oms --lines 50
 sudo nano /etc/nginx/sites-available/buddiescraft
 ```
 
-Replace the `proxy_pass` (or add if not present) to point at the Next.js app:
 ```nginx
 server {
     listen 80;
     server_name buddiescraft.duckdns.org;
+    return 301 https://$host$request_uri;
+}
+
+server {
+    listen 443 ssl;
+    server_name buddiescraft.duckdns.org;
+
+    # SSL certs (Let's Encrypt or existing)
+    ssl_certificate     /etc/letsencrypt/live/buddiescraft.duckdns.org/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/buddiescraft.duckdns.org/privkey.pem;
 
     location / {
         proxy_pass http://127.0.0.1:3000;
@@ -153,81 +157,69 @@ server {
         proxy_cache_bypass $http_upgrade;
     }
 
-    # Serve uploaded files directly (from old Java app uploads folder)
+    # Serve uploaded files from old Java app directly
     location /uploads/ {
         alias /opt/giftbox/uploads/;
     }
 }
 ```
 
-- [ ] **Step 2: Test and reload Nginx**
+- [ ] **Step 2: Test and reload**
 
 ```bash
 sudo nginx -t
-# Expected: syntax is ok / test is successful
 sudo systemctl reload nginx
 ```
 
-- [ ] **Step 3: Verify via browser**
+- [ ] **Step 3: Browser test**
 
-Open `http://buddiescraft.duckdns.org/login` — should show the new Next.js login page.
+Open `https://buddiescraft.duckdns.org/login` — new Next.js login page should appear.
 
 ---
 
-## Task 4: Enable PM2 startup on reboot
+## Task 5: PM2 startup on reboot
 
-- [ ] **Step 1: Save PM2 process list**
-
-```bash
-pm2 save
-```
-
-- [ ] **Step 2: Generate startup script**
+- [ ] **Step 1: Enable PM2 on boot**
 
 ```bash
 pm2 startup
-# Follow the instruction it prints (usually: sudo env PATH=... pm2 startup systemd ...)
-```
-
-- [ ] **Step 3: Reboot and verify**
-
-```bash
-sudo reboot
-# Wait 30 seconds, then:
-curl http://localhost:3000
-pm2 list
+# Run the command it prints, then:
+pm2 save
 ```
 
 ---
 
-## Rollback Plan (if something goes wrong)
+## Applying Prisma Migrations (manual, opt-in)
 
-If the new app fails and you need to restore the old Java app immediately:
+> This DB was originally created by the old Spring Boot app and later manually aligned with the Prisma schema. Do NOT apply migrations blindly.
+
+When you add a new migration and are ready to apply it on production:
+
+```bash
+# Option A: first-time baseline (marks old migrations as already applied without running them)
+npx prisma migrate resolve --applied "20260607061220_init"
+npx prisma migrate resolve --applied "20260607073618_add_schema_improvements"
+npx prisma migrate resolve --applied "20260622182845_add_must_change_password"
+
+# Option B: apply new migrations only (after baselines are done)
+RUN_PRISMA_MIGRATE=true bash deploy.sh
+```
+
+---
+
+## Rollback
+
+If the new app fails:
 
 ```bash
 # 1. Stop new app
 pm2 stop giftbox-oms
 
-# 2. Restore DB backup (only if data was corrupted — usually not needed)
-mysql -u giftbox -pgiftbox giftbox_oms < /opt/giftbox/backup-YYYYMMDD-HHMMSS.sql
+# 2. Restore DB (only if data was corrupted)
+mysql -u buddiescraft_user -p'Giftbox@2026' buddiescraft_db < /root/buddiescraft_db_backup_DATE.sql
 
-# 3. Restart old Java app
-cd /opt/giftbox
-bash start.sh
+# 3. Old Java app is still in /opt/giftbox — restart it manually if needed
+cd /opt/giftbox && bash start.sh
 
-# 4. Revert Nginx to old port (whatever the Java app used)
-sudo nano /etc/nginx/sites-available/buddiescraft
-sudo systemctl reload nginx
+# 4. Revert Nginx proxy_pass to old Java app port (was 8080)
 ```
-
----
-
-## Notes on Prisma Migration Baseline
-
-The new Next.js app uses Prisma migrations to manage the schema. The old Java Spring Boot app already created the same tables (users, customer, customer_order, etc.). On first deploy, `deploy.sh` runs:
-
-```bash
-npx prisma migrate resolve --applied "20260607061220_init"
-```
-
-This inserts a row into `_prisma_migrations` table marking those migrations as already applied — without actually running the `CREATE TABLE` SQL. This prevents the "Table already exists" error. Any future migrations (added after first deploy) will run normally via `prisma migrate deploy`.
