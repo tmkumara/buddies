@@ -39,6 +39,7 @@ model User {
   payments           Payment[]
   stockAdjustments   StockAdjustment[]
   stockItemEntries   StockItemEntry[]
+  notificationReads NotificationRead[]
 
   @@map("users")
 }
@@ -184,6 +185,7 @@ model Order {
   payments         Payment[]
   stockAdjustments StockAdjustment[]
   stockItemEntries StockItemEntry[]
+  notifications    Notification[]
 
   @@index([status])
   @@index([orderDate])
@@ -316,4 +318,30 @@ model StockAdjustment {
   @@index([materialId])
   @@index([orderId])
   @@map("stock_adjustment")
+}
+
+model Notification {
+  id        Int                @id @default(autoincrement())
+  type      String             @db.VarChar(50)
+  title     String             @db.VarChar(150)
+  body      String             @db.VarChar(500)
+  orderId   Int?               @map("order_id")
+  order     Order?             @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  createdAt DateTime           @default(now()) @map("created_at") @db.DateTime
+  reads     NotificationRead[]
+
+  @@index([createdAt])
+  @@map("notification")
+}
+
+model NotificationRead {
+  id             Int          @id @default(autoincrement())
+  notificationId Int          @map("notification_id")
+  notification   Notification @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+  userId         Int          @map("user_id")
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  readAt         DateTime     @default(now()) @map("read_at") @db.DateTime
+
+  @@unique([notificationId, userId])
+  @@map("notification_read")
 }
