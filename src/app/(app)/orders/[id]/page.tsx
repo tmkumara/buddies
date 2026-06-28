@@ -6,7 +6,6 @@ import Link from "next/link";
 import { FileText } from "lucide-react";
 import { STATUS_LABELS, STATUS_CSS, type OrderStatusKey } from "@/lib/utils/status-transitions";
 import OrderStatusForm from "./OrderStatusForm";
-import OrderDetailsForm from "./OrderDetailsForm";
 import PaymentSection from "./PaymentSection";
 import WhatsAppShareButton from "./WhatsAppShareButton";
 
@@ -21,7 +20,14 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
       items: {
         orderBy: { id: "asc" },
         include: {
-          boxDesign: { select: { material: { select: { status: true } } } },
+          boxDesign: {
+            select: {
+              material:   { select: { status: true } },
+              designType: { select: { name: true } },
+              lengthCm: true, widthCm: true, heightCm: true,
+              lengthIn: true, widthIn: true, heightIn: true,
+            },
+          },
         },
       },
       statusHistory: {
@@ -40,9 +46,14 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
 
   if (!order) notFound();
 
-  const deliveryMethods = await prisma.deliveryMethod.findMany({
-    where: { active: true }, orderBy: { id: "asc" }, select: { id: true, name: true },
-  });
+  function itemSizeStr(bd: { lengthIn?: unknown; widthIn?: unknown; heightIn?: unknown; lengthCm?: unknown; widthCm?: unknown; heightCm?: unknown } | null): string | undefined {
+    if (!bd) return undefined;
+    const inDims = [bd.lengthIn, bd.widthIn, bd.heightIn].filter((v): v is NonNullable<typeof v> => v != null).map((v) => Number(v).toFixed(0));
+    if (inDims.length === 3) return `${inDims.join("×")} in`;
+    const cmDims = [bd.lengthCm, bd.widthCm, bd.heightCm].filter((v): v is NonNullable<typeof v> => v != null).map((v) => Number(v).toFixed(0));
+    if (cmDims.length === 3) return `${cmDims.join("×")} cm`;
+    return undefined;
+  }
 
   const totalAmount    = Number(order.totalAmount);
   const discountAmount = Number(order.discountAmount);
@@ -198,15 +209,26 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                   </tr>
                 </thead>
                 <tbody>
-                  {order.items.map((item) => (
-                    <tr key={item.id}>
-                      <td style={{ fontWeight: 700, color: "#F5B61E", fontSize: "0.72rem", letterSpacing: "0.06em" }}>{item.designCode}</td>
-                      <td style={{ color: "#F0EDE6" }}>{item.designName}</td>
-                      <td style={{ textAlign: "right", color: "rgba(240,237,230,0.7)" }}>{item.quantity.toLocaleString()}</td>
-                      <td style={{ textAlign: "right", color: "rgba(240,237,230,0.7)" }}>Rs. {Number(item.unitPrice).toFixed(2)}</td>
-                      <td style={{ textAlign: "right", fontWeight: 600, color: "#F0EDE6" }}>Rs. {Number(item.lineTotal).toFixed(2)}</td>
-                    </tr>
-                  ))}
+                  {order.items.map((item) => {
+                    const boxTypeName = item.boxDesign?.designType?.name;
+                    const sizeStr     = itemSizeStr(item.boxDesign ?? null);
+                    return (
+                      <tr key={item.id}>
+                        <td style={{ fontWeight: 700, color: "#F5B61E", fontSize: "0.72rem", letterSpacing: "0.06em" }}>{item.designCode}</td>
+                        <td style={{ color: "#F0EDE6" }}>
+                          <div>{item.designName}</div>
+                          {(boxTypeName || sizeStr) && (
+                            <div style={{ fontSize: "0.68rem", color: "rgba(240,237,230,0.3)", marginTop: "0.1rem" }}>
+                              {[boxTypeName, sizeStr].filter(Boolean).join("  ·  ")}
+                            </div>
+                          )}
+                        </td>
+                        <td style={{ textAlign: "right", color: "rgba(240,237,230,0.7)" }}>{item.quantity.toLocaleString()}</td>
+                        <td style={{ textAlign: "right", color: "rgba(240,237,230,0.7)" }}>Rs. {Number(item.unitPrice).toFixed(2)}</td>
+                        <td style={{ textAlign: "right", fontWeight: 600, color: "#F0EDE6" }}>Rs. {Number(item.lineTotal).toFixed(2)}</td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -255,18 +277,6 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
           {/* ── Status Update ── */}
           <div style={section}>
             <OrderStatusForm orderId={order.id} currentStatus={order.status as OrderStatusKey} />
-          </div>
-
-          {/* ── Details Edit ── */}
-          <div style={section}>
-            <OrderDetailsForm
-              orderId={order.id}
-              deliveryDate={deliveryDate}
-              remarks={order.remarks}
-              deliveryMethodId={order.deliveryMethodId}
-              deliveryCharge={deliveryCharge}
-              deliveryMethods={deliveryMethods}
-            />
           </div>
 
           {/* ── Status History ── */}
