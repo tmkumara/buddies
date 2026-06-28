@@ -13,9 +13,8 @@ export async function generateMetadata({ params }: { params: Promise<{ token: st
 const COMPANY = {
   name:    "Buddies",
   tagline: "Your Vision, Our Mission",
-  phone:   "0783085081 / 0707490585",
+  phone:   "0783085081",
   email:   "hello.buddieslk@gmail.com",
-  web:     "www.buddiescraft.net",
   city:    "Athurugiriya, Sri Lanka",
 };
 
@@ -49,7 +48,7 @@ export default async function PublicInvoicePage({ params }: { params: Promise<{ 
           <div>
             <div style={{ fontSize: "1.35rem", fontWeight: 800, color: "#1a1a1a", marginBottom: "0.15rem" }}>{COMPANY.name}</div>
             <div style={{ fontSize: "0.65rem", color: "#6b7280", letterSpacing: "0.07em", marginBottom: "0.5rem" }}>{COMPANY.tagline.toUpperCase()}</div>
-            <div style={{ fontSize: "0.7rem", color: "#6b7280" }}>{COMPANY.phone} · {COMPANY.email}</div>
+            <div style={{ fontSize: "0.7rem", color: "#6b7280" }}>{COMPANY.phone}  ·  {COMPANY.email}</div>
           </div>
         </div>
         <div style={{ textAlign: "right" }}>
@@ -110,6 +109,9 @@ export default async function PublicInvoicePage({ params }: { params: Promise<{ 
           {data.discountAmount > 0 && (
             <div className="inv-tot-row"><span style={{ color: "#555" }}>Discount ({data.discountPercent.toFixed(1)}%)</span><span style={{ color: "#dc2626" }}>− Rs. {data.discountAmount.toFixed(2)}</span></div>
           )}
+          {data.deliveryCharge > 0 && (
+            <div className="inv-tot-row"><span style={{ color: "#555" }}>{data.deliveryMethodName ?? "Delivery"}</span><span>Rs. {data.deliveryCharge.toFixed(2)}</span></div>
+          )}
           <div className="inv-net-row"><span>Total</span><span>Rs. {data.netAmount.toFixed(2)}</span></div>
           <div className="inv-tot-row" style={{ marginTop: "0.5rem" }}><span style={{ color: "#555" }}>Paid</span><span style={{ color: "#16a34a", fontWeight: 600 }}>Rs. {data.totalPaid.toFixed(2)}</span></div>
           <div className="inv-tot-row"><span style={{ fontWeight: 600 }}>Balance Due</span><span style={{ fontWeight: 700, color: data.balance > 0.01 ? "#dc2626" : "#16a34a" }}>Rs. {Math.max(0, data.balance).toFixed(2)}</span></div>
@@ -139,7 +141,7 @@ export default async function PublicInvoicePage({ params }: { params: Promise<{ 
       <div className="inv-divider" />
       <div className="inv-footer-wrap">
         <div className="inv-footer-tagline">Thank you for choosing {COMPANY.name}</div>
-        <div>{COMPANY.phone} · {COMPANY.email} · {COMPANY.web} · {COMPANY.city}</div>
+        <div>{COMPANY.phone}  ·  {COMPANY.email}  ·  {COMPANY.city}</div>
       </div>
       </div>
     </div>

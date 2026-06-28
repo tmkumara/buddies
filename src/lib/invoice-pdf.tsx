@@ -8,9 +8,8 @@ const LOGO = fs.readFileSync(path.join(process.cwd(), "public", "buddiesicon-rem
 const COMPANY = {
   name:    "Buddies",
   tagline: "Your Vision, Our Mission",
-  phone:   "0783085081 / 0707490585",
+  phone:   "0783085081",
   email:   "hello.buddieslk@gmail.com",
-  web:     "www.buddiescraft.net",
   city:    "Athurugiriya, Sri Lanka",
 };
 
@@ -51,7 +50,7 @@ export function InvoicePDFDocument({ data }: { data: InvoiceData }) {
               <Text style={{ fontSize: 15, fontFamily: "Helvetica-Bold", color: "#1a1a1a", letterSpacing: 0.5 }}>{COMPANY.name}</Text>
               <Text style={{ fontSize: 6.5, color: "#9ca3af", letterSpacing: 0.7, marginTop: 2 }}>{COMPANY.tagline.toUpperCase()}</Text>
               <Text style={{ fontSize: 7, color: "#6b7280", marginTop: 5 }}>
-                {COMPANY.phone}  ·  {COMPANY.email}  ·  {COMPANY.web}  ·  {COMPANY.city}
+                {COMPANY.phone}  ·  {COMPANY.email}  ·  {COMPANY.city}
               </Text>
             </View>
           </View>
@@ -110,6 +109,12 @@ export function InvoicePDFDocument({ data }: { data: InvoiceData }) {
                 <Text style={{ color: "#dc2626" }}>− Rs. {data.discountAmount.toFixed(2)}</Text>
               </View>
             )}
+            {data.deliveryCharge > 0 && (
+              <View style={styles.totLine}>
+                <Text style={{ color: "#555" }}>{data.deliveryMethodName ?? "Delivery"}</Text>
+                <Text>Rs. {data.deliveryCharge.toFixed(2)}</Text>
+              </View>
+            )}
             <View style={styles.netLine}>
               <Text style={[styles.bold, { fontSize: 11 }]}>TOTAL</Text>
               <Text style={[styles.bold, { fontSize: 11 }]}>Rs. {data.netAmount.toFixed(2)}</Text>
@@ -145,7 +150,7 @@ export function InvoicePDFDocument({ data }: { data: InvoiceData }) {
         {/* Footer */}
         <View style={[styles.divider, { marginTop: 8 }]} />
         <Text style={[styles.footer, { fontFamily: "Helvetica-Oblique", marginBottom: 2 }]}>Thank you for choosing {COMPANY.name}</Text>
-        <Text style={styles.footer}>{COMPANY.phone}  ·  {COMPANY.email}  ·  {COMPANY.web}  ·  {COMPANY.city}</Text>
+        <Text style={styles.footer}>{COMPANY.phone}  ·  {COMPANY.email}  ·  {COMPANY.city}</Text>
       </Page>
     </Document>
   );

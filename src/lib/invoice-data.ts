@@ -20,10 +20,12 @@ export interface InvoiceData {
     unitPrice:   number;
     lineTotal:   number;
   }[];
-  totalAmount:     number;
-  discountPercent: number;
-  discountAmount:  number;
-  netAmount:       number;
+  totalAmount:      number;
+  discountPercent:  number;
+  discountAmount:   number;
+  deliveryCharge:   number;
+  deliveryMethodName?: string;
+  netAmount:        number;
   payments: {
     paymentDate: string;
     method:      string;
@@ -54,6 +56,7 @@ export async function getInvoiceDataByToken(token: string): Promise<InvoiceData 
         },
       },
       payments: { orderBy: { paymentDate: "asc" }, select: { paymentDate: true, method: true, amount: true, referenceNo: true } },
+      deliveryMethod: { select: { name: true } },
     },
   });
   if (!order) return null;
@@ -86,10 +89,12 @@ export async function getInvoiceDataByToken(token: string): Promise<InvoiceData 
         lineTotal:   Number(item.lineTotal),
       };
     }),
-    totalAmount:     Number(order.totalAmount),
-    discountPercent: Number(order.discountPercent),
-    discountAmount:  Number(order.discountAmount),
-    netAmount:       Number(order.netAmount),
+    totalAmount:       Number(order.totalAmount),
+    discountPercent:   Number(order.discountPercent),
+    discountAmount:    Number(order.discountAmount),
+    deliveryCharge:    Number(order.deliveryCharge),
+    deliveryMethodName: order.deliveryMethod?.name,
+    netAmount:         Number(order.netAmount),
     payments: order.payments.map((p) => ({
       paymentDate: p.paymentDate.toISOString().split("T")[0],
       method:      p.method as string,

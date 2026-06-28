@@ -6,9 +6,8 @@ import Link from "next/link";
 const COMPANY = {
   name:  "Buddies",
   tag:   "Your Vision, Our Mission",
-  phone: "0783085081 / 0707490585",
+  phone: "0783085081",
   email: "hello.buddieslk@gmail.com",
-  web:   "www.buddiescraft.net",
   city:  "Athurugiriya, Sri Lanka",
 };
 
@@ -35,6 +34,7 @@ export default async function InvoicePage({ params }: { params: Promise<{ id: st
         },
       },
       payments: { orderBy: { paymentDate: "asc" }, select: { amount: true, paymentDate: true, method: true, referenceNo: true } },
+      deliveryMethod: { select: { name: true } },
     },
   });
 
@@ -42,6 +42,7 @@ export default async function InvoicePage({ params }: { params: Promise<{ id: st
 
   const totalAmount    = Number(order.totalAmount);
   const discountAmount = Number(order.discountAmount);
+  const deliveryCharge = Number(order.deliveryCharge);
   const netAmount      = Number(order.netAmount);
   const discountPct    = totalAmount > 0 ? Math.round((discountAmount / totalAmount) * 1000) / 10 : 0;
   const totalPaid      = order.payments.reduce((s, p) => s + Number(p.amount), 0);
@@ -119,7 +120,7 @@ export default async function InvoicePage({ params }: { params: Promise<{ id: st
 
           {/* Contact line */}
           <p style={{ fontSize: "0.62rem", color: "rgba(240,237,230,0.25)", margin: "0.3rem 0 0" }}>
-            {COMPANY.phone} · {COMPANY.email} · {COMPANY.web} · {COMPANY.city}
+            {COMPANY.phone}  ·  {COMPANY.email}  ·  {COMPANY.city}
           </p>
 
           <hr className="inv-divider" />
@@ -200,6 +201,11 @@ export default async function InvoicePage({ params }: { params: Promise<{ id: st
                   <span>Discount ({discountPct.toFixed(1)}%)</span><span>− Rs. {discountAmount.toFixed(2)}</span>
                 </div>
               )}
+              {deliveryCharge > 0 && (
+                <div className="inv-tot-row">
+                  <span>{order.deliveryMethod?.name ?? "Delivery"}</span><span>Rs. {deliveryCharge.toFixed(2)}</span>
+                </div>
+              )}
               <div className="inv-net-row"><span>Net Amount</span><span>Rs. {netAmount.toFixed(2)}</span></div>
               <div className="inv-tot-row" style={{ marginTop: "0.5rem" }}>
                 <span style={{ color: "#4ADE80" }}>Paid</span>
@@ -229,7 +235,7 @@ export default async function InvoicePage({ params }: { params: Promise<{ id: st
 
             <div className="inv-footer">
               <div className="inv-footer-tagline">Thank you for choosing {COMPANY.name}</div>
-              <div>{COMPANY.phone} · {COMPANY.email} · {COMPANY.web} · {COMPANY.city}</div>
+              <div>{COMPANY.phone}  ·  {COMPANY.email}  ·  {COMPANY.city}</div>
             </div>
           </div>
         </div>

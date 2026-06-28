@@ -29,6 +29,7 @@ export async function GET(
         },
       },
       payments: { orderBy: { paymentDate: "asc" }, select: { amount: true, paymentDate: true, method: true, referenceNo: true } },
+      deliveryMethod: { select: { name: true } },
     },
   });
 
@@ -36,6 +37,7 @@ export async function GET(
 
   const totalAmount    = Number(order.totalAmount);
   const discountAmount = Number(order.discountAmount);
+  const deliveryCharge = Number(order.deliveryCharge);
   const netAmount      = Number(order.netAmount);
   const totalPaid      = order.payments.reduce((s, p) => s + Number(p.amount), 0);
 
@@ -75,7 +77,9 @@ export async function GET(
     }),
     totalAmount,
     discountAmount,
-    discountPct:  totalAmount > 0 ? Math.round((discountAmount / totalAmount) * 1000) / 10 : 0,
+    discountPct:       totalAmount > 0 ? Math.round((discountAmount / totalAmount) * 1000) / 10 : 0,
+    deliveryCharge,
+    deliveryMethodName: order.deliveryMethod?.name,
     netAmount,
     totalPaid,
     balance:      netAmount - totalPaid,

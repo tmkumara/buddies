@@ -19,7 +19,8 @@ export function calculateQuantityDiscount(totalQty: number): number {
 export function calculateOrderTotals(
   items: { unitPrice: number; quantity: number }[],
   discountOverride?: number | null,
-): { totalAmount: number; discountAmount: number; netAmount: number; discountPercent: number } {
+  deliveryCharge?: number | null,
+): { totalAmount: number; discountAmount: number; netAmount: number; discountPercent: number; deliveryCharge: number } {
   const totalAmount = items.reduce(
     (sum, item) => sum + calculateLineTotal(item.unitPrice, item.quantity),
     0,
@@ -31,9 +32,10 @@ export function calculateOrderTotals(
     : calculateQuantityDiscount(totalQty) * 100;
 
   const discountAmount = Math.round(totalAmount * (discountPercent / 100) * 100) / 100;
-  const netAmount      = Math.round((totalAmount - discountAmount) * 100) / 100;
+  const delivery       = Math.round((deliveryCharge ?? 0) * 100) / 100;
+  const netAmount      = Math.round((totalAmount - discountAmount + delivery) * 100) / 100;
 
-  return { totalAmount, discountAmount, netAmount, discountPercent };
+  return { totalAmount, discountAmount, netAmount, discountPercent, deliveryCharge: delivery };
 }
 
 export function toNumber(value: { toString(): string } | number | string): number {

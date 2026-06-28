@@ -14,24 +14,31 @@ interface Props {
     id: number; status: string; deliveryDate: string | null;
     remarks: string | null; leadSourceId: number | null;
     discountPercent: number;
+    deliveryCharge:   number;
+    deliveryMethodId: number | null;
     items: OrderItem[];
   };
-  boxTypes:    BoxTypeOption[];
-  boxDesigns:  BoxDesignOption[];
-  designTypes: DesignTypeOption[];
-  materials:   MaterialOption[];
-  leadSources: { id: number; name: string }[];
-  stockItems:  StockItemOption[];
-  isAdmin:     boolean;
+  boxTypes:        BoxTypeOption[];
+  boxDesigns:      BoxDesignOption[];
+  designTypes:     DesignTypeOption[];
+  materials:       MaterialOption[];
+  leadSources:     { id: number; name: string }[];
+  stockItems:      StockItemOption[];
+  deliveryMethods: { id: number; name: string }[];
+  isAdmin:         boolean;
 }
 
-export default function EditOrderForm({ order, boxTypes, boxDesigns, designTypes, materials, leadSources, stockItems, isAdmin }: Props) {
+export default function EditOrderForm({ order, boxTypes, boxDesigns, designTypes, materials, leadSources, stockItems, deliveryMethods, isAdmin }: Props) {
   const router = useRouter();
-  const [error,   setError]   = useState("");
-  const [loading, setLoading] = useState(false);
-  const [items,   setItems]   = useState<OrderItem[]>(order.items);
-  const [discountOverride, setDiscountOverride] = useState(
+  const [error,             setError]             = useState("");
+  const [loading,           setLoading]           = useState(false);
+  const [items,             setItems]             = useState<OrderItem[]>(order.items);
+  const [discountOverride,  setDiscountOverride]  = useState(
     order.discountPercent > 0 ? String(order.discountPercent) : ""
+  );
+  const [deliveryMethodId,  setDeliveryMethodId]  = useState<number | null>(order.deliveryMethodId);
+  const [deliveryChargeStr, setDeliveryChargeStr] = useState<string>(
+    order.deliveryCharge > 0 ? String(order.deliveryCharge) : ""
   );
 
   const canEditDiscount = ["DRAFT", "CONFIRMED", "IN_PRODUCTION"].includes(order.status);
@@ -41,7 +48,8 @@ export default function EditOrderForm({ order, boxTypes, boxDesigns, designTypes
   const autoRate       = calculateQuantityDiscount(totalQty);
   const effectiveRate  = discountOverride !== "" && isAdmin ? parseFloat(discountOverride) / 100 : autoRate;
   const discountAmount = Math.round(totalAmount * effectiveRate * 100) / 100;
-  const netAmount      = Math.round((totalAmount - discountAmount) * 100) / 100;
+  const deliveryCharge = parseFloat(deliveryChargeStr || "0") || 0;
+  const netAmount      = Math.round((totalAmount - discountAmount + deliveryCharge) * 100) / 100;
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -55,6 +63,8 @@ export default function EditOrderForm({ order, boxTypes, boxDesigns, designTypes
       unitPrice: i.unitPrice,
     }))));
     if (discountOverride !== "" && isAdmin) fd.set("discountPercent", discountOverride);
+    if (deliveryMethodId) fd.set("deliveryMethodId", String(deliveryMethodId));
+    fd.set("deliveryCharge", String(deliveryCharge));
 
     const result = await updateOrderItems(order.id, fd);
     if (result?.error) { setError(result.error); setLoading(false); return; }
@@ -104,6 +114,42 @@ export default function EditOrderForm({ order, boxTypes, boxDesigns, designTypes
             </div>
           </div>
 
+          {/* Delivery */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1rem" }}>
+            <div>
+              <label style={label}>DELIVERY METHOD</label>
+              <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap" }}>
+                {deliveryMethods.map((m) => (
+                  <button
+                    key={m.id} type="button"
+                    onClick={() => setDeliveryMethodId(deliveryMethodId === m.id ? null : m.id)}
+                    style={{
+                      flex: "1 1 auto", padding: "0.65rem 0.5rem",
+                      border: "1px solid",
+                      borderColor: deliveryMethodId === m.id ? "#F5B61E" : "rgba(245,182,30,0.14)",
+                      borderRadius: "0.5rem",
+                      background: deliveryMethodId === m.id ? "rgba(245,182,30,0.1)" : "rgba(255,255,255,0.04)",
+                      color: deliveryMethodId === m.id ? "#F5B61E" : "rgba(240,237,230,0.45)",
+                      fontSize: "0.72rem", letterSpacing: "0.08em", cursor: "pointer", fontWeight: 600,
+                    }}
+                  >
+                    {m.name.toUpperCase()}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <label style={label}>DELIVERY CHARGE (Rs.)</label>
+              <input
+                type="number" min="0" step="0.01"
+                value={deliveryChargeStr}
+                onChange={(e) => setDeliveryChargeStr(e.target.value)}
+                placeholder="0.00"
+                style={input}
+              />
+            </div>
+          </div>
+
           <div style={{ marginBottom: "1.5rem" }}>
             <label style={label}>REMARKS</label>
             <textarea name="remarks" rows={2} defaultValue={order.remarks ?? ""} style={{ ...input, resize: "vertical" }} />
@@ -145,6 +191,12 @@ export default function EditOrderForm({ order, boxTypes, boxDesigns, designTypes
                   <div style={{ display: "flex", justifyContent: "space-between", width: "260px", fontSize: "0.82rem", color: "#F87171" }}>
                     <span>Discount ({(effectiveRate * 100).toFixed(1)}%)</span>
                     <span>− Rs. {discountAmount.toFixed(2)}</span>
+                  </div>
+                )}
+                {deliveryCharge > 0 && (
+                  <div style={{ display: "flex", justifyContent: "space-between", width: "260px", fontSize: "0.82rem", color: "rgba(240,237,230,0.55)" }}>
+                    <span>{deliveryMethods.find((m) => m.id === deliveryMethodId)?.name ?? "Delivery"}</span>
+                    <span>+ Rs. {deliveryCharge.toFixed(2)}</span>
                   </div>
                 )}
                 <div style={{ display: "flex", justifyContent: "space-between", width: "260px", fontSize: "1rem", fontWeight: 700, color: "#F5B61E", borderTop: "1px solid rgba(245,182,30,0.15)", paddingTop: "0.45rem", marginTop: "0.2rem" }}>

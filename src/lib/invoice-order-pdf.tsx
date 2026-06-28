@@ -9,9 +9,8 @@ const LOGO = fs.readFileSync(path.join(process.cwd(), "public", "buddiesicon-rem
 const COMPANY = {
   name:    "Buddies",
   tagline: "Your Vision, Our Mission",
-  phone:   "0783085081 / 0707490585",
+  phone:   "0783085081",
   email:   "hello.buddieslk@gmail.com",
-  web:     "www.buddiescraft.net",
   city:    "Athurugiriya, Sri Lanka",
 };
 
@@ -48,7 +47,7 @@ export interface OrderPDFData {
   orderNo: string; orderDate: string; deliveryDate: string | null; status: string; remarks: string | null;
   customer: { name: string; phone: string; phone2: string | null; email: string | null; addressLine: string | null };
   items: { designCode: string; designName: string; boxTypeName?: string; sizeCm?: string; quantity: number; unitPrice: number; lineTotal: number }[];
-  totalAmount: number; discountAmount: number; discountPct: number; netAmount: number; totalPaid: number; balance: number;
+  totalAmount: number; discountAmount: number; discountPct: number; deliveryCharge: number; deliveryMethodName?: string; netAmount: number; totalPaid: number; balance: number;
   payments: { paymentDate: string; method: string; referenceNo: string | null; amount: number }[];
 }
 
@@ -72,7 +71,7 @@ export function OrderInvoicePDF({ data }: { data: OrderPDFData }) {
               <Text style={{ fontSize: 15, fontFamily: "Helvetica-Bold", color: C.gold, letterSpacing: 1 }}>{COMPANY.name}</Text>
               <Text style={{ fontSize: 6.5, color: C.muted, letterSpacing: 0.8, marginTop: 2 }}>{COMPANY.tagline.toUpperCase()}</Text>
               <Text style={{ fontSize: 7, color: C.muted, marginTop: 5 }}>
-                {COMPANY.phone}  ·  {COMPANY.email}  ·  {COMPANY.web}  ·  {COMPANY.city}
+                {COMPANY.phone}  ·  {COMPANY.email}  ·  {COMPANY.city}
               </Text>
             </View>
           </View>
@@ -146,6 +145,12 @@ export function OrderInvoicePDF({ data }: { data: OrderPDFData }) {
                 <Text style={{ color: C.red }}>− Rs. {data.discountAmount.toFixed(2)}</Text>
               </View>
             )}
+            {data.deliveryCharge > 0 && (
+              <View style={s.totRow}>
+                <Text style={{ color: C.muted }}>{data.deliveryMethodName ?? "Delivery"}</Text>
+                <Text>Rs. {data.deliveryCharge.toFixed(2)}</Text>
+              </View>
+            )}
             <View style={s.netRow}>
               <Text style={[s.bold, { fontSize: 11, color: C.gold }]}>Net Amount</Text>
               <Text style={[s.bold, { fontSize: 11, color: C.gold }]}>Rs. {data.netAmount.toFixed(2)}</Text>
@@ -181,7 +186,7 @@ export function OrderInvoicePDF({ data }: { data: OrderPDFData }) {
         {/* Footer */}
         <View style={[s.divider, { borderTopColor: "#C8940A", borderTopWidth: 0.5 }]} />
         <Text style={[s.footer, { fontFamily: "Helvetica-Oblique", marginBottom: 2 }]}>Thank you for choosing {COMPANY.name}</Text>
-        <Text style={s.footer}>{COMPANY.phone}  ·  {COMPANY.email}  ·  {COMPANY.web}  ·  {COMPANY.city}</Text>
+        <Text style={s.footer}>{COMPANY.phone}  ·  {COMPANY.email}  ·  {COMPANY.city}</Text>
       </Page>
     </Document>
   );

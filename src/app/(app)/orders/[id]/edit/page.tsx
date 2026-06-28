@@ -19,7 +19,7 @@ export default async function EditOrderPage({ params }: { params: Promise<{ id: 
   const editableStatuses = ["DRAFT", "CONFIRMED", "IN_PRODUCTION"];
   if (!editableStatuses.includes(order.status)) redirect(`/orders/${id}`);
 
-  const [boxTypes, boxDesigns, designTypes, materials, leadSources, stockItems] = await Promise.all([
+  const [boxTypes, boxDesigns, designTypes, materials, leadSources, stockItems, deliveryMethods] = await Promise.all([
     prisma.designType.findMany({ where: { active: true }, orderBy: { code: "asc" }, select: { id: true, code: true, name: true } }),
     prisma.boxDesign.findMany({
       where: { active: true }, orderBy: { code: "asc" },
@@ -33,15 +33,18 @@ export default async function EditOrderPage({ params }: { params: Promise<{ id: 
       select:  { id: true, code: true, name: true, stockUnit: true, unitPrice: true, currentStock: true },
       orderBy: { name: "asc" },
     }),
+    prisma.deliveryMethod.findMany({ where: { active: true }, orderBy: { id: "asc" }, select: { id: true, name: true } }),
   ]);
 
   const serializedOrder = {
-    id:             order.id,
-    status:         order.status,
-    deliveryDate:   order.deliveryDate?.toISOString().split("T")[0] ?? null,
-    remarks:        order.remarks,
-    leadSourceId:   order.leadSourceId,
-    discountPercent: Number(order.discountPercent),
+    id:               order.id,
+    status:           order.status,
+    deliveryDate:     order.deliveryDate?.toISOString().split("T")[0] ?? null,
+    remarks:          order.remarks,
+    leadSourceId:     order.leadSourceId,
+    discountPercent:  Number(order.discountPercent),
+    deliveryCharge:   Number(order.deliveryCharge),
+    deliveryMethodId: order.deliveryMethodId,
     items: order.items.map((item) => ({
       key:         `item-${item.id}`,
       boxDesignId: item.boxDesignId ?? 0,
@@ -78,6 +81,7 @@ export default async function EditOrderPage({ params }: { params: Promise<{ id: 
           materials={materials}
           leadSources={leadSources}
           stockItems={serialisedStockItems}
+          deliveryMethods={deliveryMethods}
           isAdmin={session.user.role === "ADMIN"}
         />
       </div>

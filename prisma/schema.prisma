@@ -149,6 +149,15 @@ model LeadSource {
   @@map("lead_source")
 }
 
+model DeliveryMethod {
+  id     Int     @id @default(autoincrement())
+  name   String  @db.VarChar(100)
+  active Boolean @default(true)
+  orders Order[]
+
+  @@map("delivery_method")
+}
+
 model Order {
   id               Int                  @id @default(autoincrement())
   orderNo          String               @unique @map("order_no") @db.VarChar(50)
@@ -159,6 +168,9 @@ model Order {
   status           OrderStatus          @default(DRAFT)
   totalAmount      Decimal              @default(0.00) @map("total_amount") @db.Decimal(12, 2)
   discountAmount   Decimal              @default(0.00) @map("discount_amount") @db.Decimal(12, 2)
+  deliveryCharge   Decimal              @default(0.00) @map("delivery_charge") @db.Decimal(10, 2)
+  deliveryMethodId Int?                 @map("delivery_method_id")
+  deliveryMethod   DeliveryMethod?      @relation(fields: [deliveryMethodId], references: [id])
   netAmount        Decimal              @default(0.00) @map("net_amount") @db.Decimal(12, 2)
   remarks          String?              @db.VarChar(255)
   discountPercent  Decimal              @default(0.00) @map("discount_percent") @db.Decimal(5, 2)
@@ -177,6 +189,7 @@ model Order {
   @@index([orderDate])
   @@index([customerId])
   @@index([leadSourceId])
+  @@index([deliveryMethodId])
   @@index([publicToken])
   @@map("customer_order")
 }

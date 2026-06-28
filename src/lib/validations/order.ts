@@ -14,7 +14,9 @@ export const createOrderSchema = z.object({
   customerId:      z.coerce.number().int().positive("Customer is required"),
   orderDate:       z.string().min(1, "Order date is required"),
   deliveryDate:    z.string().optional(),
-  discountPercent: z.coerce.number().min(0).max(100).optional(), // optional ADMIN override
+  discountPercent: z.coerce.number().min(0).max(100).optional(),
+  deliveryCharge:  z.coerce.number().min(0).optional(),
+  deliveryMethodId: z.coerce.number().int().positive().optional(),
   remarks:         z.string().max(255).optional(),
   leadSourceId:    z.coerce.number().int().positive().optional(),
 });

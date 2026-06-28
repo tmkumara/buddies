@@ -25,6 +25,8 @@ export async function createOrder(formData: FormData) {
     orderDate:       formData.get("orderDate"),
     deliveryDate:    (formData.get("deliveryDate") as string) || undefined,
     discountPercent: (formData.get("discountPercent") as string) || undefined,
+    deliveryCharge:   (formData.get("deliveryCharge") as string) || undefined,
+    deliveryMethodId: (formData.get("deliveryMethodId") as string) || undefined,
     remarks:         (formData.get("remarks") as string) || undefined,
     leadSourceId:    (formData.get("leadSourceId") as string) || undefined,
   });
@@ -79,7 +81,7 @@ export async function createOrder(formData: FormData) {
     if (!siMap.has(item.stockItemId)) return { error: `Stock item ID ${item.stockItemId} is inactive or does not exist` };
   }
 
-  const totals = calculateOrderTotals(items, parsed.data.discountPercent ?? null);
+  const totals = calculateOrderTotals(items, parsed.data.discountPercent ?? null, parsed.data.deliveryCharge ?? 0);
   const publicToken = crypto.randomBytes(32).toString("hex");
 
   // Generate order number atomically before main transaction
@@ -96,7 +98,9 @@ export async function createOrder(formData: FormData) {
         status:         OrderStatus.DRAFT,
         totalAmount:    totals.totalAmount,
         discountAmount: totals.discountAmount,
-        netAmount:      totals.netAmount,
+        deliveryCharge:   totals.deliveryCharge,
+        deliveryMethodId: parsed.data.deliveryMethodId ?? null,
+        netAmount:        totals.netAmount,
         remarks:        parsed.data.remarks ?? null,
         discountPercent: totals.discountPercent,
         leadSourceId:    parsed.data.leadSourceId ?? null,
@@ -286,11 +290,12 @@ export async function updateOrderItems(orderId: number, formData: FormData) {
     if (!siMap.has(item.stockItemId)) return { error: `Stock item ID ${item.stockItemId} is inactive or does not exist` };
   }
 
-  // Read optional discount override from formData
   const discountOverrideRaw = formData.get("discountPercent") as string | null;
   const discountOverride = discountOverrideRaw ? parseFloat(discountOverrideRaw) : null;
+  const deliveryChargeRaw  = parseFloat((formData.get("deliveryCharge") as string) || "0") || 0;
+  const deliveryMethodIdRaw = formData.get("deliveryMethodId") ? Number(formData.get("deliveryMethodId")) : null;
 
-  const totals = calculateOrderTotals(items, discountOverride);
+  const totals = calculateOrderTotals(items, discountOverride, deliveryChargeRaw);
 
   await prisma.$transaction([
     prisma.orderItem.deleteMany({ where: { orderId } }),
@@ -299,7 +304,9 @@ export async function updateOrderItems(orderId: number, formData: FormData) {
       data: {
         totalAmount:    totals.totalAmount,
         discountAmount: totals.discountAmount,
-        netAmount:      totals.netAmount,
+        deliveryCharge:   totals.deliveryCharge,
+        deliveryMethodId: deliveryMethodIdRaw,
+        netAmount:        totals.netAmount,
         discountPercent: totals.discountPercent,
         deliveryDate: formData.get("deliveryDate")
           ? new Date(formData.get("deliveryDate") as string)
