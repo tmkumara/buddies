@@ -42,9 +42,15 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
     },
   });
 
-  // Ensure publicToken is available (it's a scalar field, automatically included)
-
   if (!order) notFound();
+
+  // Old Spring Boot orders have no public_token — generate and persist one on first view.
+  let publicToken = order.publicToken;
+  if (!publicToken) {
+    const { randomBytes } = await import("crypto");
+    publicToken = randomBytes(32).toString("hex");
+    await prisma.order.update({ where: { id: order.id }, data: { publicToken } });
+  }
 
   function itemSizeStr(bd: { lengthIn?: unknown; widthIn?: unknown; heightIn?: unknown; lengthCm?: unknown; widthCm?: unknown; heightCm?: unknown } | null): string | undefined {
     if (!bd) return undefined;
@@ -169,7 +175,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                 netAmount={netAmount}
                 totalPaid={totalPaid}
                 balance={balance}
-                publicToken={order.publicToken}
+                publicToken={publicToken}
               />
             </div>
           </div>
