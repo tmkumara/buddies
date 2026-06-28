@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Trash2, Sparkles, AlertTriangle } from "lucide-react";
+import { Plus, Trash2, Sparkles, AlertTriangle, ChevronDown } from "lucide-react";
 import QuickCreateDesignPanel, { type DesignTypeOption, type MaterialOption } from "./QuickCreateDesignPanel";
 import Combobox from "@/components/ui/Combobox";
 
@@ -18,6 +18,7 @@ export interface BoxDesignOption {
   unitPrice:      number;
   boxTypeId:      number;
   boxTypeName:    string;
+  sizeStr?:       string;
 }
 
 export interface StockItemOption {
@@ -195,14 +196,20 @@ export default function OrderItemsEditor({
                     <tr key={item.key}>
                       {/* ITEM TYPE selector */}
                       <td style={td}>
-                        <select
-                          value={itemType}
-                          onChange={(e) => handleItemTypeChange(item.key, e.target.value as "design" | "stock")}
-                          style={sel}
-                        >
-                          <option value="design">Box Design</option>
-                          <option value="stock">Stock Item</option>
-                        </select>
+                        <div style={{ position: "relative" }}>
+                          <select
+                            value={itemType}
+                            onChange={(e) => handleItemTypeChange(item.key, e.target.value as "design" | "stock")}
+                            style={{ ...sel, appearance: "none", paddingRight: "1.75rem" }}
+                          >
+                            <option value="design">Box Design</option>
+                            <option value="stock">Stock Item</option>
+                          </select>
+                          <ChevronDown
+                            size={12}
+                            style={{ position: "absolute", right: "0.5rem", top: "50%", transform: "translateY(-50%)", pointerEvents: "none", color: "rgba(245,182,30,0.5)" }}
+                          />
+                        </div>
                       </td>
 
                       {/* ITEM picker — design or stock branch */}
@@ -226,7 +233,12 @@ export default function OrderItemsEditor({
                                 name={`__design_${item.key}`}
                                 placeholder="— Select Design —"
                                 value={item.boxDesignId || ""}
-                                options={localDesigns.map((bd) => ({ value: bd.id, label: bd.code, meta: bd.name }))}
+                                options={localDesigns.map((bd) => ({
+                                  value:    bd.id,
+                                  label:    bd.code,
+                                  meta:     bd.name,
+                                  subtitle: [bd.boxTypeName, bd.sizeStr].filter(Boolean).join("  ·  ") || undefined,
+                                }))}
                                 onChange={(v) => handleBoxDesignChange(item.key, String(v))}
                               />
                             </div>
