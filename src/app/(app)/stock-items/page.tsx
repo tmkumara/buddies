@@ -1,5 +1,6 @@
 import prisma from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth-guards";
+import TopBar from "@/components/layout/TopBar";
 import StockItemsClient from "@/components/stock-items/StockItemsClient";
 
 export const metadata = { title: "Stock Items — Buddies OMS" };
@@ -44,9 +45,12 @@ export default async function StockItemsPage() {
   const outStock = items.filter((i) => Number(i.currentStock) <= 0 && i.active).length;
 
   return (
-    <StockItemsClient
-      items={serialised}
-      stats={{ total, inStock, lowStock, outStock }}
-    />
+    <>
+      <TopBar title="Stock Items" />
+      <StockItemsClient
+        items={serialised}
+        stats={{ total, inStock, lowStock, outStock }}
+      />
+    </>
   );
 }
