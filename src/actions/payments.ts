@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { requireAuth } from "@/lib/auth-guards";
 import prisma from "@/lib/prisma";
 import { createPaymentSchema } from "@/lib/validations/payment";
+import { notificationService } from "@/lib/notifications";
 
 export async function createPayment(orderId: number, formData: FormData) {
   const session = await requireAuth();
@@ -19,7 +20,7 @@ export async function createPayment(orderId: number, formData: FormData) {
 
   const order = await prisma.order.findUnique({
     where:  { id: orderId },
-    select: { id: true },
+    select: { id: true, orderNo: true },
   });
   if (!order) return { error: "Order not found" };
 
@@ -35,15 +36,25 @@ export async function createPayment(orderId: number, formData: FormData) {
     },
   });
 
+  await notificationService({
+    type:    "PAYMENT_RECEIVED",
+    title:   `Payment received — ${order.orderNo}`,
+    body:    `Rs. ${Number(parsed.data.amount).toFixed(2)} recorded`,
+    orderId,
+  });
+
   revalidatePath(`/orders/${orderId}`);
-  return { success: true as const };
+  return {
+    success: true as const,
+    toast: { type: "success" as const, title: "Payment recorded", body: `Rs. ${Number(parsed.data.amount).toFixed(2)} recorded` },
+  };
 }
 
 export async function deletePayment(paymentId: number, orderId: number) {
   await requireAuth();
 
   const order = await prisma.order.findUnique({
-    where: { id: orderId },
+    where:  { id: orderId },
     select: { status: true },
   });
   if (!order) return { error: "Order not found" };
@@ -53,5 +64,8 @@ export async function deletePayment(paymentId: number, orderId: number) {
 
   await prisma.payment.delete({ where: { id: paymentId, orderId } });
   revalidatePath(`/orders/${orderId}`);
-  return { success: true as const };
+  return {
+    success: true as const,
+    toast: { type: "info" as const, title: "Payment removed" },
+  };
 }

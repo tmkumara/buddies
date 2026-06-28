@@ -3,6 +3,7 @@
 import { useState, FormEvent } from "react";
 import { Plus, Trash2 } from "lucide-react";
 import { createPayment, deletePayment } from "@/actions/payments";
+import { useToast } from "@/lib/toast-context";
 
 interface PaymentRow {
   id:          number;
@@ -29,6 +30,7 @@ export default function PaymentSection({ orderId, netAmount, payments: initPayme
   const [showForm, setShowForm] = useState(false);
   const [saving,   setSaving]   = useState(false);
   const [error,    setError]    = useState("");
+  const { showToast } = useToast();
 
   const totalPaid = payments.reduce((s, p) => s + p.amount, 0);
   const balance   = netAmount - totalPaid;
@@ -42,13 +44,14 @@ export default function PaymentSection({ orderId, netAmount, payments: initPayme
     const result = await createPayment(orderId, fd);
     setSaving(false);
     if ("error" in result) { setError(result.error ?? "Unknown error"); return; }
-    // Optimistically reload page to get fresh server data
+    if (result.toast) showToast(result.toast);
     window.location.reload();
   }
 
   async function handleDelete(paymentId: number) {
     if (!confirm("Remove this payment?")) return;
-    await deletePayment(paymentId, orderId);
+    const result = await deletePayment(paymentId, orderId);
+    if ("toast" in result && result.toast) showToast(result.toast);
     window.location.reload();
   }
 
