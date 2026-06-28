@@ -1,44 +1,47 @@
 "use client";
 
+import { useState } from "react";
 import { MessageCircle, Link2 } from "lucide-react";
+import { useToast } from "@/lib/toast-context";
 
 interface Props {
-  orderNo: string;
+  orderNo:      string;
   customerName: string;
-  netAmount: number;
-  balance: number;
-  publicToken: string | null;
+  netAmount:    number;
+  balance:      number;
+  publicToken:  string | null;
 }
 
-export default function WhatsAppShareButton({
-  orderNo,
-  customerName,
-  netAmount,
-  balance,
-  publicToken,
-}: Props) {
-  if (!publicToken) {
-    return null;
-  }
+export default function WhatsAppShareButton({ orderNo, publicToken }: Props) {
+  const { showToast } = useToast();
+  const [loading, setLoading] = useState(false);
 
-  function handleShare() {
-    const baseUrl = window.location.origin;
-    const invoiceUrl = `${baseUrl}/invoice/${publicToken}`;
-    const message = [
-      `*Buddies Gift Box — Invoice*`,
-      ``,
-      `Order: *${orderNo}*`,
-      `Customer: ${customerName}`,
-      `Amount: *Rs. ${netAmount.toFixed(2)}*`,
-      balance > 0.01
-        ? `Balance Due: Rs. ${balance.toFixed(2)}`
-        : `✅ Fully Paid`,
-      ``,
-      `View Invoice: ${invoiceUrl}`,
-    ].join("\n");
+  if (!publicToken) return null;
 
-    const url = `https://wa.me/?text=${encodeURIComponent(message)}`;
-    window.open(url, "_blank", "noopener,noreferrer");
+  async function handleShare() {
+    setLoading(true);
+    try {
+      const res  = await fetch(`/api/invoice/${publicToken}/pdf`);
+      const blob = await res.blob();
+      const file = new File([blob], `${orderNo}-invoice.pdf`, { type: "application/pdf" });
+
+      if (navigator.canShare?.({ files: [file] })) {
+        await navigator.share({ files: [file], title: `Invoice ${orderNo}` });
+      } else {
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = `${orderNo}-invoice.pdf`;
+        a.click();
+        URL.revokeObjectURL(a.href);
+        showToast("PDF downloaded — share it manually via WhatsApp");
+      }
+    } catch (err) {
+      if ((err as Error).name !== "AbortError") {
+        showToast("Could not share PDF — check your connection");
+      }
+    } finally {
+      setLoading(false);
+    }
   }
 
   function handleCopy() {
@@ -51,37 +54,25 @@ export default function WhatsAppShareButton({
       <button
         type="button"
         onClick={handleShare}
+        disabled={loading}
         style={{
-          display: "flex",
-          alignItems: "center",
-          gap: "0.4rem",
-          background: "rgba(37,211,102,0.1)",
-          border: "1px solid rgba(37,211,102,0.3)",
-          borderRadius: "0.5rem",
-          padding: "0.5rem 0.9rem",
-          color: "#25D366",
-          fontSize: "0.68rem",
-          letterSpacing: "0.07em",
-          cursor: "pointer",
+          display: "flex", alignItems: "center", gap: "0.4rem",
+          background: "rgba(37,211,102,0.1)", border: "1px solid rgba(37,211,102,0.3)",
+          borderRadius: "0.5rem", padding: "0.5rem 0.9rem",
+          color: "#25D366", fontSize: "0.68rem", letterSpacing: "0.07em",
+          cursor: loading ? "wait" : "pointer", opacity: loading ? 0.7 : 1,
         }}
       >
-        <MessageCircle size={13} /> WHATSAPP
+        <MessageCircle size={13} /> {loading ? "LOADING…" : "WHATSAPP"}
       </button>
       <button
         type="button"
         onClick={handleCopy}
         style={{
-          display: "flex",
-          alignItems: "center",
-          gap: "0.4rem",
-          background: "rgba(255,255,255,0.04)",
-          border: "1px solid rgba(245,182,30,0.12)",
-          borderRadius: "0.5rem",
-          padding: "0.5rem 0.9rem",
-          color: "rgba(240,237,230,0.45)",
-          fontSize: "0.68rem",
-          letterSpacing: "0.07em",
-          cursor: "pointer",
+          display: "flex", alignItems: "center", gap: "0.4rem",
+          background: "rgba(255,255,255,0.04)", border: "1px solid rgba(245,182,30,0.12)",
+          borderRadius: "0.5rem", padding: "0.5rem 0.9rem",
+          color: "rgba(240,237,230,0.45)", fontSize: "0.68rem", letterSpacing: "0.07em", cursor: "pointer",
         }}
       >
         <Link2 size={13} /> COPY LINK
