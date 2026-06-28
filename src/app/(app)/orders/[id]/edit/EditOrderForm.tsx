@@ -36,6 +36,7 @@ export default function EditOrderForm({ order, boxTypes, boxDesigns, designTypes
   const [discountOverride,  setDiscountOverride]  = useState(
     order.discountPercent > 0 ? String(order.discountPercent) : ""
   );
+  const [discountType,      setDiscountType]      = useState<"percent" | "fixed">("percent");
   const [deliveryMethodId,  setDeliveryMethodId]  = useState<number | null>(order.deliveryMethodId);
   const [deliveryChargeStr, setDeliveryChargeStr] = useState<string>(
     order.deliveryCharge > 0 ? String(order.deliveryCharge) : ""
@@ -46,7 +47,11 @@ export default function EditOrderForm({ order, boxTypes, boxDesigns, designTypes
   const totalQty       = items.reduce((s, i) => s + i.quantity, 0);
   const totalAmount    = items.reduce((s, i) => s + i.lineTotal, 0);
   const autoRate       = calculateQuantityDiscount(totalQty);
-  const effectiveRate  = discountOverride !== "" && isAdmin ? parseFloat(discountOverride) / 100 : autoRate;
+  const effectiveRate  = discountOverride !== "" && isAdmin
+    ? (discountType === "fixed"
+        ? Math.min(1, parseFloat(discountOverride) / (totalAmount || 1))
+        : parseFloat(discountOverride) / 100)
+    : autoRate;
   const discountAmount = Math.round(totalAmount * effectiveRate * 100) / 100;
   const deliveryCharge = parseFloat(deliveryChargeStr || "0") || 0;
   const netAmount      = Math.round((totalAmount - discountAmount + deliveryCharge) * 100) / 100;
@@ -62,7 +67,12 @@ export default function EditOrderForm({ order, boxTypes, boxDesigns, designTypes
       quantity:  i.quantity,
       unitPrice: i.unitPrice,
     }))));
-    if (discountOverride !== "" && isAdmin) fd.set("discountPercent", discountOverride);
+    if (discountOverride !== "" && isAdmin) {
+      const resolvedPercent = discountType === "fixed"
+        ? Math.min(100, (parseFloat(discountOverride) / (totalAmount || 1)) * 100)
+        : parseFloat(discountOverride);
+      fd.set("discountPercent", String(resolvedPercent));
+    }
     if (deliveryMethodId) fd.set("deliveryMethodId", String(deliveryMethodId));
     fd.set("deliveryCharge", String(deliveryCharge));
 
@@ -118,25 +128,16 @@ export default function EditOrderForm({ order, boxTypes, boxDesigns, designTypes
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1rem" }}>
             <div>
               <label style={label}>DELIVERY METHOD</label>
-              <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap" }}>
-                {deliveryMethods.map((m) => (
-                  <button
-                    key={m.id} type="button"
-                    onClick={() => setDeliveryMethodId(deliveryMethodId === m.id ? null : m.id)}
-                    style={{
-                      flex: "1 1 auto", padding: "0.65rem 0.5rem",
-                      border: "1px solid",
-                      borderColor: deliveryMethodId === m.id ? "#F5B61E" : "rgba(245,182,30,0.14)",
-                      borderRadius: "0.5rem",
-                      background: deliveryMethodId === m.id ? "rgba(245,182,30,0.1)" : "rgba(255,255,255,0.04)",
-                      color: deliveryMethodId === m.id ? "#F5B61E" : "rgba(240,237,230,0.45)",
-                      fontSize: "0.72rem", letterSpacing: "0.08em", cursor: "pointer", fontWeight: 600,
-                    }}
-                  >
-                    {m.name.toUpperCase()}
-                  </button>
-                ))}
-              </div>
+              <Combobox
+                name="__deliveryMethod"
+                placeholder="— None —"
+                value={deliveryMethodId ?? ""}
+                options={[
+                  { value: "", label: "— None —" },
+                  ...deliveryMethods.map((m) => ({ value: m.id, label: m.name })),
+                ]}
+                onChange={(v) => setDeliveryMethodId(v === "" ? null : Number(v))}
+              />
             </div>
             <div>
               <label style={label}>DELIVERY CHARGE (Rs.)</label>
@@ -172,34 +173,44 @@ export default function EditOrderForm({ order, boxTypes, boxDesigns, designTypes
           {items.length > 0 && (
             <div style={{ background: "rgba(245,182,30,0.04)", border: "1px solid rgba(245,182,30,0.1)", borderRadius: "0.5rem", padding: "1rem 1.25rem", marginBottom: "1.5rem" }}>
               <div style={{ display: "flex", flexDirection: "column", gap: "0.45rem", alignItems: "flex-end" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", width: "260px", fontSize: "0.82rem", color: "rgba(240,237,230,0.55)" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", width: "300px", fontSize: "0.82rem", color: "rgba(240,237,230,0.55)" }}>
                   <span>Subtotal</span><span>Rs. {totalAmount.toFixed(2)}</span>
                 </div>
                 {isAdmin && canEditDiscount && (
-                  <div style={{ display: "flex", justifyContent: "space-between", width: "260px", alignItems: "center", gap: "0.5rem" }}>
-                    <span style={{ fontSize: "0.72rem", color: "rgba(240,237,230,0.4)" }}>Discount %:</span>
-                    <input
-                      type="number" min="0" max="100" step="0.01"
-                      value={discountOverride}
-                      onChange={(e) => setDiscountOverride(e.target.value)}
-                      placeholder={String((autoRate * 100).toFixed(0))}
-                      style={{ width: "80px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(245,182,30,0.2)", borderRadius: "0.35rem", padding: "0.3rem 0.5rem", color: "#F5B61E", fontSize: "0.78rem", outline: "none" }}
-                    />
+                  <div style={{ display: "flex", justifyContent: "space-between", width: "300px", alignItems: "center", gap: "0.5rem" }}>
+                    <span style={{ fontSize: "0.72rem", color: "rgba(240,237,230,0.4)", flexShrink: 0 }}>Discount override:</span>
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                      <label style={{ display: "flex", alignItems: "center", gap: "0.2rem", fontSize: "0.7rem", color: "rgba(240,237,230,0.5)", cursor: "pointer" }}>
+                        <input type="radio" name="discountTypeEdit" value="percent" checked={discountType === "percent"} onChange={() => setDiscountType("percent")} style={{ accentColor: "#F5B61E" }} />
+                        %
+                      </label>
+                      <label style={{ display: "flex", alignItems: "center", gap: "0.2rem", fontSize: "0.7rem", color: "rgba(240,237,230,0.5)", cursor: "pointer" }}>
+                        <input type="radio" name="discountTypeEdit" value="fixed" checked={discountType === "fixed"} onChange={() => setDiscountType("fixed")} style={{ accentColor: "#F5B61E" }} />
+                        Rs.
+                      </label>
+                      <input
+                        type="number" min="0" step="0.01"
+                        value={discountOverride}
+                        onChange={(e) => setDiscountOverride(e.target.value)}
+                        placeholder={discountType === "percent" ? String((autoRate * 100).toFixed(0)) : "0.00"}
+                        style={{ width: "80px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(245,182,30,0.2)", borderRadius: "0.35rem", padding: "0.3rem 0.5rem", color: "#F5B61E", fontSize: "0.78rem", outline: "none" }}
+                      />
+                    </div>
                   </div>
                 )}
                 {discountAmount > 0 && (
-                  <div style={{ display: "flex", justifyContent: "space-between", width: "260px", fontSize: "0.82rem", color: "#F87171" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", width: "300px", fontSize: "0.82rem", color: "#F87171" }}>
                     <span>Discount ({(effectiveRate * 100).toFixed(1)}%)</span>
                     <span>− Rs. {discountAmount.toFixed(2)}</span>
                   </div>
                 )}
                 {deliveryCharge > 0 && (
-                  <div style={{ display: "flex", justifyContent: "space-between", width: "260px", fontSize: "0.82rem", color: "rgba(240,237,230,0.55)" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", width: "300px", fontSize: "0.82rem", color: "rgba(240,237,230,0.55)" }}>
                     <span>{deliveryMethods.find((m) => m.id === deliveryMethodId)?.name ?? "Delivery"}</span>
                     <span>+ Rs. {deliveryCharge.toFixed(2)}</span>
                   </div>
                 )}
-                <div style={{ display: "flex", justifyContent: "space-between", width: "260px", fontSize: "1rem", fontWeight: 700, color: "#F5B61E", borderTop: "1px solid rgba(245,182,30,0.15)", paddingTop: "0.45rem", marginTop: "0.2rem" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", width: "300px", fontSize: "1rem", fontWeight: 700, color: "#F5B61E", borderTop: "1px solid rgba(245,182,30,0.15)", paddingTop: "0.45rem", marginTop: "0.2rem" }}>
                   <span>Net Amount</span><span>Rs. {netAmount.toFixed(2)}</span>
                 </div>
               </div>
