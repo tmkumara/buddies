@@ -87,7 +87,14 @@ export default async function PublicInvoicePage({ params }: { params: Promise<{ 
           {data.items.map((item, i) => (
             <tr key={i} style={{ background: i % 2 === 0 ? "#fff" : "#f9fafb" }}>
               <td>{item.designCode}</td>
-              <td>{item.designName}</td>
+              <td>
+                <div>{item.designName}</div>
+                {(item.boxTypeName || item.sizeCm) && (
+                  <div style={{ fontSize: "0.68rem", color: "#9ca3af", marginTop: "0.15rem" }}>
+                    {[item.boxTypeName, item.sizeCm].filter(Boolean).join("  ·  ")}
+                  </div>
+                )}
+              </td>
               <td className="inv-tr">{item.quantity}</td>
               <td className="inv-tr">Rs. {item.unitPrice.toFixed(2)}</td>
               <td className="inv-tr">Rs. {item.lineTotal.toFixed(2)}</td>

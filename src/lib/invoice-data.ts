@@ -12,11 +12,13 @@ export interface InvoiceData {
     addressLine: string | null;
   };
   items: {
-    designCode: string;
-    designName: string;
-    quantity:   number;
-    unitPrice:  number;
-    lineTotal:  number;
+    designCode:  string;
+    designName:  string;
+    boxTypeName?: string;
+    sizeCm?:     string;
+    quantity:    number;
+    unitPrice:   number;
+    lineTotal:   number;
   }[];
   totalAmount:     number;
   discountPercent: number;
@@ -39,7 +41,18 @@ export async function getInvoiceDataByToken(token: string): Promise<InvoiceData 
     where: { publicToken: token },
     include: {
       customer: { select: { name: true, phone: true, phone2: true, email: true, addressLine: true } },
-      items:    { orderBy: { id: "asc" } },
+      items: {
+        orderBy: { id: "asc" },
+        include: {
+          boxDesign: {
+            select: {
+              lengthCm: true, widthCm: true, heightCm: true,
+              lengthIn: true, widthIn: true, heightIn: true,
+              designType: { select: { name: true } },
+            },
+          },
+        },
+      },
       payments: { orderBy: { paymentDate: "asc" }, select: { paymentDate: true, method: true, amount: true, referenceNo: true } },
     },
   });
@@ -52,13 +65,27 @@ export async function getInvoiceDataByToken(token: string): Promise<InvoiceData 
     orderDate:    order.orderDate.toISOString().split("T")[0],
     deliveryDate: order.deliveryDate?.toISOString().split("T")[0] ?? null,
     customer:     order.customer,
-    items: order.items.map((item) => ({
-      designCode: item.designCode,
-      designName: item.designName,
-      quantity:   item.quantity,
-      unitPrice:  Number(item.unitPrice),
-      lineTotal:  Number(item.lineTotal),
-    })),
+    items: order.items.map((item) => {
+      const bd = item.boxDesign;
+      const inDims = ([bd?.lengthIn, bd?.widthIn, bd?.heightIn] as (object | null | undefined)[])
+        .filter((v): v is object => v != null)
+        .map((v) => Number(v).toFixed(1));
+      const cmDims = ([bd?.lengthCm, bd?.widthCm, bd?.heightCm] as (object | null | undefined)[])
+        .filter((v): v is object => v != null)
+        .map((v) => Number(v).toFixed(0));
+      const sizeStr = inDims.length > 0
+        ? inDims.join("×") + " in"
+        : cmDims.length > 0 ? cmDims.join("×") + " cm" : undefined;
+      return {
+        designCode:  item.designCode,
+        designName:  item.designName,
+        boxTypeName: bd?.designType?.name,
+        sizeCm:      sizeStr,
+        quantity:    item.quantity,
+        unitPrice:   Number(item.unitPrice),
+        lineTotal:   Number(item.lineTotal),
+      };
+    }),
     totalAmount:     Number(order.totalAmount),
     discountPercent: Number(order.discountPercent),
     discountAmount:  Number(order.discountAmount),

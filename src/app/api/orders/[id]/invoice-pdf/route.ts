@@ -16,7 +16,18 @@ export async function GET(
     where: { id: Number(id) },
     include: {
       customer: true,
-      items:    { orderBy: { id: "asc" } },
+      items: {
+        orderBy: { id: "asc" },
+        include: {
+          boxDesign: {
+            select: {
+              lengthCm: true, widthCm: true, heightCm: true,
+              lengthIn: true, widthIn: true, heightIn: true,
+              designType: { select: { name: true } },
+            },
+          },
+        },
+      },
       payments: { orderBy: { paymentDate: "asc" }, select: { amount: true, paymentDate: true, method: true, referenceNo: true } },
     },
   });
@@ -41,13 +52,27 @@ export async function GET(
       email:       order.customer.email,
       addressLine: order.customer.addressLine,
     },
-    items: order.items.map((i) => ({
-      designCode:  i.designCode,
-      designName:  i.designName,
-      quantity:    i.quantity,
-      unitPrice:   Number(i.unitPrice),
-      lineTotal:   Number(i.lineTotal),
-    })),
+    items: order.items.map((i) => {
+      const bd = i.boxDesign;
+      const inDims = ([bd?.lengthIn, bd?.widthIn, bd?.heightIn] as (object | null | undefined)[])
+        .filter((v): v is object => v != null)
+        .map((v) => Number(v).toFixed(1));
+      const cmDims = ([bd?.lengthCm, bd?.widthCm, bd?.heightCm] as (object | null | undefined)[])
+        .filter((v): v is object => v != null)
+        .map((v) => Number(v).toFixed(0));
+      const sizeStr = inDims.length > 0
+        ? inDims.join("×") + " in"
+        : cmDims.length > 0 ? cmDims.join("×") + " cm" : undefined;
+      return {
+        designCode:  i.designCode,
+        designName:  i.designName,
+        boxTypeName: bd?.designType?.name,
+        sizeCm:      sizeStr,
+        quantity:    i.quantity,
+        unitPrice:   Number(i.unitPrice),
+        lineTotal:   Number(i.lineTotal),
+      };
+    }),
     totalAmount,
     discountAmount,
     discountPct:  totalAmount > 0 ? Math.round((discountAmount / totalAmount) * 1000) / 10 : 0,

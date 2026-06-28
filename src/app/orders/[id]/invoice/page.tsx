@@ -22,7 +22,18 @@ export default async function InvoicePage({ params }: { params: Promise<{ id: st
     where: { id: Number(id) },
     include: {
       customer: true,
-      items:    { orderBy: { id: "asc" } },
+      items: {
+        orderBy: { id: "asc" },
+        include: {
+          boxDesign: {
+            select: {
+              lengthCm: true, widthCm: true, heightCm: true,
+              lengthIn: true, widthIn: true, heightIn: true,
+              designType: { select: { name: true } },
+            },
+          },
+        },
+      },
       payments: { orderBy: { paymentDate: "asc" }, select: { amount: true, paymentDate: true, method: true, referenceNo: true } },
     },
   });
@@ -154,16 +165,29 @@ export default async function InvoicePage({ params }: { params: Promise<{ id: st
               </tr>
             </thead>
             <tbody>
-              {order.items.map((item, idx) => (
+              {order.items.map((item, idx) => {
+                const bd = item.boxDesign;
+                const inDims = ([bd?.lengthIn, bd?.widthIn, bd?.heightIn] as (object | null | undefined)[])
+                  .filter((v): v is object => v != null).map((v) => Number(v).toFixed(1));
+                const cmDims = ([bd?.lengthCm, bd?.widthCm, bd?.heightCm] as (object | null | undefined)[])
+                  .filter((v): v is object => v != null).map((v) => Number(v).toFixed(0));
+                const sizeStr = inDims.length > 0 ? inDims.join("×") + " in"
+                  : cmDims.length > 0 ? cmDims.join("×") + " cm" : null;
+                const subtitle = [bd?.designType?.name, sizeStr].filter(Boolean).join("  ·  ");
+                return (
                 <tr key={item.id}>
                   <td className="muted">{idx + 1}</td>
                   <td style={{ fontWeight: 700, color: "#F5B61E", fontSize: "0.72rem", letterSpacing: "0.05em" }}>{item.designCode}</td>
-                  <td>{item.designName}</td>
+                  <td>
+                    <div>{item.designName}</div>
+                    {subtitle && <div style={{ fontSize: "0.62rem", color: "rgba(240,237,230,0.3)", marginTop: "0.15rem" }}>{subtitle}</div>}
+                  </td>
                   <td className="r">{item.quantity.toLocaleString()}</td>
                   <td className="r" style={{ color: "rgba(240,237,230,0.55)" }}>Rs. {Number(item.unitPrice).toFixed(2)}</td>
                   <td className="r" style={{ fontWeight: 600 }}>Rs. {Number(item.lineTotal).toFixed(2)}</td>
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
           </table>
 

@@ -1,8 +1,9 @@
 import { Document, Page, Text, View, StyleSheet, Image } from "@react-pdf/renderer";
 import path from "path";
+import fs from "fs";
 import type { InvoiceData } from "./invoice-data";
 
-const LOGO = path.join(process.cwd(), "public/buddiesicon-removebg.png");
+const LOGO = fs.readFileSync(path.join(process.cwd(), "public", "buddiesicon-removebg.png"));
 
 const COMPANY = {
   name:    "Buddies",
@@ -84,7 +85,14 @@ export function InvoicePDFDocument({ data }: { data: InvoiceData }) {
           {data.items.map((item, idx) => (
             <View key={idx} style={{ flexDirection: "row", backgroundColor: idx % 2 === 0 ? "#fff" : "#f9fafb" }}>
               <Text style={[styles.td, { width: colW[0] }]}>{item.designCode}</Text>
-              <Text style={[styles.td, { width: colW[1] }]}>{item.designName}</Text>
+              <View style={[styles.td, { width: colW[1] }]}>
+                <Text>{item.designName}</Text>
+                {(item.boxTypeName || item.sizeCm) && (
+                  <Text style={{ fontSize: 7, color: "#9ca3af", marginTop: 2 }}>
+                    {[item.boxTypeName, item.sizeCm].filter(Boolean).join("  ·  ")}
+                  </Text>
+                )}
+              </View>
               <Text style={[styles.td, { width: colW[2], textAlign: "center" }]}>{item.quantity}</Text>
               <Text style={[styles.td, { width: colW[3], textAlign: "right" }]}>{item.unitPrice.toFixed(2)}</Text>
               <Text style={[styles.td, { width: colW[4], textAlign: "right" }]}>{item.lineTotal.toFixed(2)}</Text>

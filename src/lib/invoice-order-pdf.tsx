@@ -1,9 +1,10 @@
 import * as ReactPDF from "@react-pdf/renderer";
 import path from "path";
+import fs from "fs";
 
 const { Document, Page, Text, View, StyleSheet, Image } = ReactPDF;
 
-const LOGO = path.join(process.cwd(), "public/buddiesicon-removebg.png");
+const LOGO = fs.readFileSync(path.join(process.cwd(), "public", "buddiesicon-removebg.png"));
 
 const COMPANY = {
   name:    "Buddies",
@@ -46,7 +47,7 @@ const s = StyleSheet.create({
 export interface OrderPDFData {
   orderNo: string; orderDate: string; deliveryDate: string | null; status: string; remarks: string | null;
   customer: { name: string; phone: string; phone2: string | null; email: string | null; addressLine: string | null };
-  items: { designCode: string; designName: string; quantity: number; unitPrice: number; lineTotal: number }[];
+  items: { designCode: string; designName: string; boxTypeName?: string; sizeCm?: string; quantity: number; unitPrice: number; lineTotal: number }[];
   totalAmount: number; discountAmount: number; discountPct: number; netAmount: number; totalPaid: number; balance: number;
   payments: { paymentDate: string; method: string; referenceNo: string | null; amount: number }[];
 }
@@ -120,7 +121,14 @@ export function OrderInvoicePDF({ data }: { data: OrderPDFData }) {
           {data.items.map((item, idx) => (
             <View key={idx} style={[s.row, { backgroundColor: idx % 2 === 0 ? C.card : "#111111" }]}>
               <Text style={[s.tdCell, { width: COL[0], color: C.gold, fontFamily: "Helvetica-Bold", fontSize: 8 }]}>{item.designCode}</Text>
-              <Text style={[s.tdCell, { width: COL[1] }]}>{item.designName}</Text>
+              <View style={[s.tdCell, { width: COL[1] }]}>
+                <Text>{item.designName}</Text>
+                {(item.boxTypeName || item.sizeCm) && (
+                  <Text style={{ fontSize: 7, color: C.muted, marginTop: 2 }}>
+                    {[item.boxTypeName, item.sizeCm].filter(Boolean).join("  ·  ")}
+                  </Text>
+                )}
+              </View>
               <Text style={[s.tdCell, { width: COL[2], textAlign: "right", color: C.muted }]}>{item.quantity.toLocaleString()}</Text>
               <Text style={[s.tdCell, { width: COL[3], textAlign: "right", color: C.muted }]}>Rs. {item.unitPrice.toFixed(2)}</Text>
               <Text style={[s.tdCell, { width: COL[4], textAlign: "right", fontFamily: "Helvetica-Bold" }]}>Rs. {item.lineTotal.toFixed(2)}</Text>
