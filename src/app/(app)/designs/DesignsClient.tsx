@@ -36,36 +36,57 @@ interface Props {
   initialSearch: string;
 }
 
+function designSizeStr(bd: BoxDesignData): string {
+  if (bd.lengthIn && bd.widthIn && bd.heightIn)
+    return `${bd.lengthIn}×${bd.widthIn}×${bd.heightIn} in`;
+  if (bd.lengthCm && bd.widthCm && bd.heightCm)
+    return `${bd.lengthCm}×${bd.widthCm}×${bd.heightCm} cm`;
+  return "";
+}
+
 export default function DesignsClient({ boxTypes, materials, initialSearch }: Props) {
   const [search,        setSearch]        = useState(initialSearch);
+  const [sizeSearch,    setSizeSearch]    = useState("");
   const [expanded,      setExpanded]      = useState<Set<number>>(new Set(boxTypes.map((bt) => bt.id)));
   const [editingType,   setEditingType]   = useState<BoxTypeData | null>(null);
   const [creatingType,  setCreatingType]  = useState(false);
   const [editingDesign, setEditingDesign] = useState<BoxDesignData | null>(null);
   const [addingToType,  setAddingToType]  = useState<BoxTypeData | null>(null);
 
-  const q = search.toLowerCase().trim();
+  const q  = search.toLowerCase().trim();
+  const qs = sizeSearch.toLowerCase().trim();
+
+  const sizeOptions = useMemo(() => {
+    const set = new Set<string>();
+    boxTypes.forEach((bt) =>
+      bt.boxDesigns.forEach((bd) => {
+        const s = designSizeStr(bd);
+        if (s) set.add(s);
+      })
+    );
+    return [...set].sort();
+  }, [boxTypes]);
 
   const filtered = useMemo(() => {
-    if (!q) return boxTypes;
+    if (!q && !qs) return boxTypes;
     return boxTypes
       .map((bt) => {
-        const typeMatch =
-          bt.code.toLowerCase().includes(q) ||
-          bt.name.toLowerCase().includes(q);
-        const matchingDesigns = bt.boxDesigns.filter(
-          (bd) =>
+        const typeTextMatch = !q || bt.code.toLowerCase().includes(q) || bt.name.toLowerCase().includes(q);
+        const matchingDesigns = bt.boxDesigns.filter((bd) => {
+          const textMatch = !q || typeTextMatch || (
             bd.code.toLowerCase().includes(q) ||
             bd.name.toLowerCase().includes(q) ||
             bd.material.name.toLowerCase().includes(q) ||
-            bd.material.code.toLowerCase().includes(q),
-        );
-        if (typeMatch) return bt;
+            bd.material.code.toLowerCase().includes(q)
+          );
+          const sizeMatch = !qs || designSizeStr(bd).toLowerCase().includes(qs);
+          return textMatch && sizeMatch;
+        });
         if (matchingDesigns.length > 0) return { ...bt, boxDesigns: matchingDesigns };
         return null;
       })
       .filter(Boolean) as BoxTypeData[];
-  }, [boxTypes, q]);
+  }, [boxTypes, q, qs]);
 
   function toggleExpand(id: number) {
     setExpanded((prev) => {
@@ -75,20 +96,34 @@ export default function DesignsClient({ boxTypes, materials, initialSearch }: Pr
     });
   }
 
+  const inputStyle: React.CSSProperties = {
+    background: "rgba(255,255,255,0.04)",
+    border: "1px solid rgba(245,182,30,0.14)", borderRadius: "0.5rem",
+    padding: "0.55rem 0.9rem", color: "#F0EDE6", fontSize: "0.8rem", outline: "none",
+  };
+
   return (
     <div style={{ padding: "1.5rem 1.75rem" }}>
       {/* Header row */}
-      <div style={{ display: "flex", gap: "0.75rem", marginBottom: "1.25rem", alignItems: "center" }}>
+      <div style={{ display: "flex", gap: "0.75rem", marginBottom: "1.25rem", alignItems: "center", flexWrap: "wrap" }}>
         <input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search box types, designs, materials…"
-          style={{
-            flex: 1, background: "rgba(255,255,255,0.04)",
-            border: "1px solid rgba(245,182,30,0.14)", borderRadius: "0.5rem",
-            padding: "0.55rem 0.9rem", color: "#F0EDE6", fontSize: "0.8rem", outline: "none",
-          }}
+          style={{ flex: "2 1 180px", ...inputStyle }}
         />
+        <div style={{ position: "relative", flex: "1 1 140px" }}>
+          <input
+            value={sizeSearch}
+            onChange={(e) => setSizeSearch(e.target.value)}
+            placeholder="Size (L×W×H cm/in)"
+            list="size-options"
+            style={{ width: "100%", ...inputStyle }}
+          />
+          <datalist id="size-options">
+            {sizeOptions.map((s) => <option key={s} value={s} />)}
+          </datalist>
+        </div>
         <button
           onClick={() => setCreatingType(true)}
           className="cta-btn"
@@ -102,7 +137,7 @@ export default function DesignsClient({ boxTypes, materials, initialSearch }: Pr
       <div className="content-card" style={{ overflow: "clip" }}>
         {filtered.length === 0 && (
           <div style={{ padding: "3rem", textAlign: "center", fontSize: "0.8rem", color: "rgba(240,237,230,0.25)" }}>
-            {q ? "No designs match your search." : "No box types yet."}
+            {q || qs ? "No designs match your search." : "No box types yet."}
           </div>
         )}
 
@@ -174,9 +209,7 @@ export default function DesignsClient({ boxTypes, materials, initialSearch }: Pr
                 </span>
                 {(bd.lengthIn || bd.lengthCm) && (
                   <span style={{ fontSize: "0.68rem", color: "rgba(240,237,230,0.35)", minWidth: "100px" }}>
-                    {bd.lengthIn && bd.widthIn && bd.heightIn
-                      ? `${bd.lengthIn}×${bd.widthIn}×${bd.heightIn} in`
-                      : `${bd.lengthCm}×${bd.widthCm}×${bd.heightCm} cm`}
+                    {designSizeStr(bd)}
                   </span>
                 )}
                 <span style={{ fontSize: "0.82rem", fontWeight: 600, color: "#F0EDE6", minWidth: "70px", textAlign: "right" }}>
