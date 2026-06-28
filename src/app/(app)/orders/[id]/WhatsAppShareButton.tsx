@@ -19,7 +19,7 @@ export default function WhatsAppShareButton({ orderNo, customerName, netAmount, 
   if (!publicToken) return null;
 
   const shareText = [
-    "Buddies Gift Box — Invoice",
+    "Buddies — Invoice",
     "",
     `Order: ${orderNo}`,
     `Customer: ${customerName}`,
