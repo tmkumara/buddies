@@ -2,6 +2,7 @@
 
 import { useState, FormEvent } from "react";
 import { updateOrderDetails } from "@/actions/orders";
+import { useToast } from "@/lib/toast-context";
 
 interface DeliveryMethod { id: number; name: string; }
 
@@ -19,7 +20,7 @@ export default function OrderDetailsForm({
 }: Props) {
   const [loading,           setLoading]           = useState(false);
   const [error,             setError]             = useState("");
-  const [success,           setSuccess]           = useState("");
+  const { showToast }                             = useToast();
   const [deliveryMethodId,  setDeliveryMethodId]  = useState<number | null>(initMethodId);
   const [deliveryChargeStr, setDeliveryChargeStr] = useState<string>(
     initCharge > 0 ? String(initCharge) : ""
@@ -27,14 +28,14 @@ export default function OrderDetailsForm({
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    setLoading(true); setError(""); setSuccess("");
+    setLoading(true); setError("");
     const fd = new FormData(e.currentTarget);
     if (deliveryMethodId) fd.set("deliveryMethodId", String(deliveryMethodId));
     else fd.delete("deliveryMethodId");
     fd.set("deliveryCharge", String(parseFloat(deliveryChargeStr || "0") || 0));
     const result = await updateOrderDetails(orderId, fd);
     if (result.error) { setError(result.error); }
-    else { setSuccess("Details updated."); }
+    else if (result.toast) { showToast(result.toast); }
     setLoading(false);
   }
 
@@ -52,8 +53,7 @@ export default function OrderDetailsForm({
       <h3 style={{ fontSize: "0.75rem", letterSpacing: "0.1em", color: "rgba(240,237,230,0.4)", marginBottom: "0.9rem" }}>
         EDIT DETAILS
       </h3>
-      {error   && <div className="form-error" style={{ marginBottom: "0.75rem" }}>{error}</div>}
-      {success && <div style={{ marginBottom: "0.75rem", padding: "0.6rem 0.9rem", background: "rgba(74,222,128,0.08)", border: "1px solid rgba(74,222,128,0.2)", borderRadius: "0.5rem", fontSize: "0.78rem", color: "#4ADE80" }}>{success}</div>}
+      {error && <div className="form-error" style={{ marginBottom: "0.75rem" }}>{error}</div>}
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem", marginBottom: "0.75rem" }}>
         <div>

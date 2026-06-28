@@ -3,6 +3,7 @@
 import { useState, FormEvent } from "react";
 import { updateOrderStatus } from "@/actions/orders";
 import { getAllowedTransitions, STATUS_LABELS, type OrderStatusKey } from "@/lib/utils/status-transitions";
+import { useToast } from "@/lib/toast-context";
 
 interface Props {
   orderId: number;
@@ -10,30 +11,27 @@ interface Props {
 }
 
 export default function OrderStatusForm({ orderId, currentStatus }: Props) {
-  const allowed = getAllowedTransitions(currentStatus);
+  const allowed              = getAllowedTransitions(currentStatus);
   const [newStatus, setNewStatus] = useState(allowed[0] ?? "");
-  const [note, setNote]           = useState("");
-  const [loading, setLoading]     = useState(false);
-  const [error, setError]         = useState("");
-  const [success, setSuccess]     = useState("");
+  const [note, setNote]     = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError]   = useState("");
+  const { showToast }       = useToast();
 
   if (allowed.length === 0) return null;
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     if (!newStatus) return;
-    setLoading(true); setError(""); setSuccess("");
+    setLoading(true); setError("");
     const result = await updateOrderStatus(orderId, newStatus, note);
-    if ("error" in result && result.error) { setError(result.error); setLoading(false); }
-    else {
-      const warn = "warnings" in result && (result as { warnings?: string[] }).warnings;
-      setSuccess(
-        warn && warn.length > 0
-          ? `Status updated. Stock warning: ${warn.join("; ")}`
-          : `Status updated to ${STATUS_LABELS[newStatus as OrderStatusKey]}`
-      );
-      setNote(""); setLoading(false);
+    if ("error" in result && result.error) {
+      setError(result.error);
+    } else {
+      if ("toast" in result && result.toast) showToast(result.toast);
+      setNote("");
     }
+    setLoading(false);
   }
 
   const input: React.CSSProperties = {
@@ -47,8 +45,7 @@ export default function OrderStatusForm({ orderId, currentStatus }: Props) {
       <h3 style={{ fontSize: "0.75rem", letterSpacing: "0.1em", color: "rgba(240,237,230,0.4)", marginBottom: "0.9rem" }}>
         UPDATE STATUS
       </h3>
-      {error   && <div className="form-error" style={{ marginBottom: "0.75rem" }}>{error}</div>}
-      {success && <div style={{ marginBottom: "0.75rem", padding: "0.6rem 0.9rem", background: "rgba(74,222,128,0.08)", border: "1px solid rgba(74,222,128,0.2)", borderRadius: "0.5rem", fontSize: "0.78rem", color: "#4ADE80" }}>{success}</div>}
+      {error && <div className="form-error" style={{ marginBottom: "0.75rem" }}>{error}</div>}
 
       <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
         <div style={{ flex: 1, minWidth: "140px" }}>
