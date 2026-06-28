@@ -3,6 +3,7 @@
 import { useState, FormEvent } from "react";
 import { updateOrderDetails } from "@/actions/orders";
 import { useToast } from "@/lib/toast-context";
+import Combobox from "@/components/ui/Combobox";
 
 interface DeliveryMethod { id: number; name: string; }
 
@@ -70,28 +71,16 @@ export default function OrderDetailsForm({
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem", marginBottom: "1rem" }}>
         <div>
           <label style={lbl}>DELIVERY METHOD</label>
-          <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap" }}>
-            {deliveryMethods.map((m) => (
-              <button
-                key={m.id} type="button"
-                onClick={() => setDeliveryMethodId(deliveryMethodId === m.id ? null : m.id)}
-                style={{
-                  flex: "1 1 auto", padding: "0.55rem 0.4rem",
-                  border: "1px solid",
-                  borderColor: deliveryMethodId === m.id ? "#F5B61E" : "rgba(245,182,30,0.14)",
-                  borderRadius: "0.5rem",
-                  background: deliveryMethodId === m.id ? "rgba(245,182,30,0.1)" : "rgba(255,255,255,0.04)",
-                  color: deliveryMethodId === m.id ? "#F5B61E" : "rgba(240,237,230,0.45)",
-                  fontSize: "0.68rem", letterSpacing: "0.08em", cursor: "pointer", fontWeight: 600,
-                }}
-              >
-                {m.name.toUpperCase()}
-              </button>
-            ))}
-            {deliveryMethods.length === 0 && (
-              <span style={{ fontSize: "0.72rem", color: "rgba(240,237,230,0.25)" }}>No methods configured</span>
-            )}
-          </div>
+          <Combobox
+            name="__deliveryMethod"
+            placeholder="— None —"
+            value={deliveryMethodId ?? ""}
+            options={[
+              { value: "", label: "— None —" },
+              ...deliveryMethods.map((m) => ({ value: m.id, label: m.name })),
+            ]}
+            onChange={(v) => setDeliveryMethodId(v === "" ? null : Number(v))}
+          />
         </div>
         <div>
           <label style={lbl}>DELIVERY CHARGE (Rs.)</label>
