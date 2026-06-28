@@ -22,6 +22,7 @@ export default function WhatsAppShareButton({ orderNo, publicToken }: Props) {
     setLoading(true);
     try {
       const res  = await fetch(`/api/invoice/${publicToken}/pdf`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const blob = await res.blob();
       const file = new File([blob], `${orderNo}-invoice.pdf`, { type: "application/pdf" });
 

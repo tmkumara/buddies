@@ -217,7 +217,7 @@ export default function NewOrderForm({ customers, boxTypes, boxDesigns, designTy
                         Rs.
                       </label>
                       <input
-                        type="number" min="0" step="0.01"
+                        type="number" min="0" max={discountType === "percent" ? 100 : undefined} step="0.01"
                         value={discountOverride}
                         onChange={(e) => setDiscountOverride(e.target.value)}
                         placeholder={discountType === "percent" ? String((autoRate * 100).toFixed(0)) : "0.00"}
