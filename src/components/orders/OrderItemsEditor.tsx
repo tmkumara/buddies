@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Trash2, Sparkles, AlertTriangle, ChevronDown } from "lucide-react";
+import { Plus, Trash2, Sparkles, AlertTriangle } from "lucide-react";
 import QuickCreateDesignPanel, { type DesignTypeOption, type MaterialOption } from "./QuickCreateDesignPanel";
 import Combobox from "@/components/ui/Combobox";
 
@@ -196,20 +196,15 @@ export default function OrderItemsEditor({
                     <tr key={item.key}>
                       {/* ITEM TYPE selector */}
                       <td style={td}>
-                        <div style={{ position: "relative" }}>
-                          <select
-                            value={itemType}
-                            onChange={(e) => handleItemTypeChange(item.key, e.target.value as "design" | "stock")}
-                            style={{ ...sel, appearance: "none", paddingRight: "1.75rem" }}
-                          >
-                            <option value="design">Box Design</option>
-                            <option value="stock">Stock Item</option>
-                          </select>
-                          <ChevronDown
-                            size={12}
-                            style={{ position: "absolute", right: "0.5rem", top: "50%", transform: "translateY(-50%)", pointerEvents: "none", color: "rgba(245,182,30,0.5)" }}
-                          />
-                        </div>
+                        <Combobox
+                          name={`__itemType_${item.key}`}
+                          value={itemType}
+                          options={[
+                            { value: "design", label: "Box Design" },
+                            { value: "stock",  label: "Stock Item" },
+                          ]}
+                          onChange={(v) => handleItemTypeChange(item.key, v as "design" | "stock")}
+                        />
                       </td>
 
                       {/* ITEM picker — design or stock branch */}
