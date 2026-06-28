@@ -218,20 +218,36 @@ export async function updateOrderDetails(orderId: number, formData: FormData) {
   await requireAuth();
 
   const parsed = updateOrderDetailsSchema.safeParse({
-    deliveryDate:    (formData.get("deliveryDate") as string) || undefined,
-    remarks:         (formData.get("remarks") as string) || undefined,
-    discountPercent: (formData.get("discountPercent") as string) || undefined,
-    leadSourceId:    (formData.get("leadSourceId") as string) || undefined,
+    deliveryDate:     (formData.get("deliveryDate") as string) || undefined,
+    remarks:          (formData.get("remarks") as string) || undefined,
+    discountPercent:  (formData.get("discountPercent") as string) || undefined,
+    leadSourceId:     (formData.get("leadSourceId") as string) || undefined,
+    deliveryCharge:   (formData.get("deliveryCharge") as string) || undefined,
+    deliveryMethodId: (formData.get("deliveryMethodId") as string) || undefined,
   });
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Validation error" };
+
+  const current = await prisma.order.findUnique({
+    where:  { id: orderId },
+    select: { totalAmount: true, discountAmount: true },
+  });
+  if (!current) return { error: "Order not found" };
+
+  const newDeliveryCharge = parsed.data.deliveryCharge ?? 0;
+  const newNetAmount = Math.round(
+    (Number(current.totalAmount) - Number(current.discountAmount) + newDeliveryCharge) * 100
+  ) / 100;
 
   await prisma.order.update({
     where: { id: orderId },
     data: {
-      deliveryDate:    parsed.data.deliveryDate ? new Date(parsed.data.deliveryDate) : null,
-      remarks:         parsed.data.remarks ?? null,
-      discountPercent: parsed.data.discountPercent ?? undefined,
-      leadSourceId:    parsed.data.leadSourceId ?? undefined,
+      deliveryDate:     parsed.data.deliveryDate ? new Date(parsed.data.deliveryDate) : null,
+      remarks:          parsed.data.remarks ?? null,
+      discountPercent:  parsed.data.discountPercent ?? undefined,
+      leadSourceId:     parsed.data.leadSourceId ?? undefined,
+      deliveryCharge:   newDeliveryCharge,
+      deliveryMethodId: parsed.data.deliveryMethodId ?? null,
+      netAmount:        newNetAmount,
     },
   });
 

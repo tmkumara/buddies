@@ -40,6 +40,10 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
 
   if (!order) notFound();
 
+  const deliveryMethods = await prisma.deliveryMethod.findMany({
+    where: { active: true }, orderBy: { id: "asc" }, select: { id: true, name: true },
+  });
+
   const totalAmount    = Number(order.totalAmount);
   const discountAmount = Number(order.discountAmount);
   const deliveryCharge = Number(order.deliveryCharge);
@@ -255,7 +259,14 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
 
           {/* ── Details Edit ── */}
           <div style={section}>
-            <OrderDetailsForm orderId={order.id} deliveryDate={deliveryDate} remarks={order.remarks} />
+            <OrderDetailsForm
+              orderId={order.id}
+              deliveryDate={deliveryDate}
+              remarks={order.remarks}
+              deliveryMethodId={order.deliveryMethodId}
+              deliveryCharge={deliveryCharge}
+              deliveryMethods={deliveryMethods}
+            />
           </div>
 
           {/* ── Status History ── */}

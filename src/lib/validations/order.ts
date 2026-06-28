@@ -22,8 +22,10 @@ export const createOrderSchema = z.object({
 });
 
 export const updateOrderDetailsSchema = z.object({
-  deliveryDate:    z.string().optional(),
-  remarks:         z.string().max(255).optional(),
-  discountPercent: z.coerce.number().min(0).max(100).optional(),
-  leadSourceId:    z.coerce.number().int().positive().optional(),
+  deliveryDate:     z.string().optional(),
+  remarks:          z.string().max(255).optional(),
+  discountPercent:  z.coerce.number().min(0).max(100).optional(),
+  leadSourceId:     z.coerce.number().int().positive().optional(),
+  deliveryCharge:   z.coerce.number().min(0).optional(),
+  deliveryMethodId: z.coerce.number().int().positive().optional(),
 });
