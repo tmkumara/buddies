@@ -13,8 +13,8 @@ interface Props {
 }
 
 export default function StockItemSlideOver({ isOpen, editItem, onClose }: Props) {
-  const router      = useRouter();
-  const formRef     = useRef<HTMLFormElement>(null);
+  const router  = useRouter();
+  const formRef = useRef<HTMLFormElement>(null);
   const [pending, startTransition] = useTransition();
 
   const inp: React.CSSProperties = {
@@ -54,59 +54,81 @@ export default function StockItemSlideOver({ isOpen, editItem, onClose }: Props)
 
   return (
     <>
-      <div className="slide-overlay" onClick={onClose} />
-      <div className="slide-panel">
-        <div className="slide-header">
-          <h2 className="slide-title">{editItem ? "Edit Stock Item" : "New Stock Item"}</h2>
-          <button onClick={onClose} className="slide-close"><X size={18} /></button>
+      <div className="slide-over-backdrop" onClick={onClose} />
+      <div className="slide-over-panel open">
+        <div className="slide-over-header">
+          <button
+            type="button"
+            onClick={onClose}
+            style={{ background: "none", border: "none", color: "rgba(240,237,230,0.45)", cursor: "pointer", padding: "0.25rem" }}
+          >
+            <X size={16} />
+          </button>
+          <span style={{ fontWeight: 600, fontSize: "0.85rem", color: "#F0EDE6" }}>
+            {editItem ? "Edit Stock Item" : "New Stock Item"}
+          </span>
         </div>
 
-        <form ref={formRef} onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-          <div>
-            <label style={lbl}>CODE</label>
-            <input name="code" required maxLength={50} defaultValue={editItem?.code ?? ""} style={inp} />
-          </div>
-          <div>
-            <label style={lbl}>NAME</label>
-            <input name="name" required maxLength={150} defaultValue={editItem?.name ?? ""} style={inp} />
-          </div>
-          <div>
-            <label style={lbl}>DESCRIPTION (optional)</label>
-            <input name="description" maxLength={255} defaultValue={editItem?.description ?? ""} style={inp} />
-          </div>
-          <div>
-            <label style={lbl}>STOCK UNIT</label>
-            <input name="stockUnit" required maxLength={50} placeholder="e.g. boxes, liters, meters" defaultValue={editItem?.stockUnit ?? ""} style={inp} />
-            <p style={{ fontSize: "0.6rem", color: "rgba(240,237,230,0.3)", marginTop: "0.3rem" }}>
-              Used as the label throughout the stock UI — be precise (e.g. "boxes" not "box")
-            </p>
-          </div>
-          <div>
-            <label style={lbl}>UNIT PRICE (Rs.)</label>
-            <input name="unitPrice" type="number" min="0" step="0.01" required defaultValue={editItem?.unitPrice ?? 0} style={inp} />
-          </div>
-          <div>
-            <label style={lbl}>MIN STOCK (low-stock threshold)</label>
-            <input name="minStock" type="number" min="0" step="0.01" defaultValue={editItem?.minStock ?? 0} style={inp} />
+        <form ref={formRef} onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", flex: 1, overflow: "hidden" }}>
+          <div className="slide-over-body" style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+            <div>
+              <label style={lbl}>CODE</label>
+              <input name="code" required maxLength={50} defaultValue={editItem?.code ?? ""} style={inp} />
+            </div>
+            <div>
+              <label style={lbl}>NAME</label>
+              <input name="name" required maxLength={150} defaultValue={editItem?.name ?? ""} style={inp} />
+            </div>
+            <div>
+              <label style={lbl}>DESCRIPTION (optional)</label>
+              <input name="description" maxLength={255} defaultValue={editItem?.description ?? ""} style={inp} />
+            </div>
+            <div>
+              <label style={lbl}>STOCK UNIT</label>
+              <input name="stockUnit" required maxLength={50} placeholder="e.g. boxes, liters, meters" defaultValue={editItem?.stockUnit ?? ""} style={inp} />
+              <p style={{ fontSize: "0.6rem", color: "rgba(240,237,230,0.3)", marginTop: "0.3rem" }}>
+                Used as the label throughout the stock UI — be precise (e.g. "boxes" not "box")
+              </p>
+            </div>
+            <div>
+              <label style={lbl}>UNIT PRICE (Rs.)</label>
+              <input name="unitPrice" type="number" min="0" step="0.01" required defaultValue={editItem?.unitPrice ?? 0} style={inp} />
+            </div>
+            <div>
+              <label style={lbl}>MIN STOCK (low-stock threshold)</label>
+              <input name="minStock" type="number" min="0" step="0.01" defaultValue={editItem?.minStock ?? 0} style={inp} />
+            </div>
           </div>
 
-          <button type="submit" className="submit-btn" disabled={pending} style={{ marginTop: "0.5rem" }}>
-            {pending ? "SAVING…" : editItem ? "SAVE CHANGES" : "CREATE STOCK ITEM"}
-          </button>
-
-          {editItem && (
-            <button
-              type="button"
-              onClick={handleToggleActive}
-              style={{
-                background: "none", border: `1px solid ${editItem.active ? "rgba(248,113,113,0.3)" : "rgba(74,222,128,0.3)"}`,
-                borderRadius: "0.5rem", padding: "0.6rem", color: editItem.active ? "#F87171" : "#4ADE80",
-                fontSize: "0.72rem", letterSpacing: "0.07em", cursor: "pointer",
-              }}
-            >
-              {editItem.active ? "DEACTIVATE" : "REACTIVATE"}
+          <div className="slide-over-footer">
+            {editItem && (
+              <button
+                type="button"
+                onClick={handleToggleActive}
+                style={{
+                  background: "none",
+                  border: `1px solid ${editItem.active ? "rgba(248,113,113,0.3)" : "rgba(74,222,128,0.3)"}`,
+                  borderRadius: "0.5rem", padding: "0.6rem 1rem",
+                  color: editItem.active ? "#F87171" : "#4ADE80",
+                  fontSize: "0.72rem", letterSpacing: "0.07em", cursor: "pointer",
+                }}
+              >
+                {editItem.active ? "DEACTIVATE" : "REACTIVATE"}
+              </button>
+            )}
+            <button type="button" onClick={onClose} style={{
+              padding: "0.6rem 1.25rem", background: "none",
+              border: "1px solid rgba(245,182,30,0.18)", borderRadius: "0.5rem",
+              color: "rgba(240,237,230,0.45)", fontSize: "0.72rem",
+              letterSpacing: "0.08em", cursor: "pointer",
+              fontFamily: "var(--font-jakarta, 'Plus Jakarta Sans', sans-serif)",
+            }}>
+              CANCEL
             </button>
-          )}
+            <button type="submit" className="submit-btn" disabled={pending} style={{ flex: 1 }}>
+              {pending ? "SAVING…" : editItem ? "SAVE CHANGES" : "CREATE STOCK ITEM"}
+            </button>
+          </div>
         </form>
       </div>
     </>
