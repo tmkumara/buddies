@@ -14,7 +14,9 @@ import { generateOrderNo } from "@/lib/utils/order-no";
 import { deductStockForOrder } from "@/actions/stock";
 import { deductStockItemsForOrder, restoreStockItemsForOrder } from "@/actions/stock-items";
 import { calculateOrderTotals, calculateLineTotal } from "@/lib/utils/calculations";
-import { isValidTransition, type OrderStatusKey } from "@/lib/utils/status-transitions";
+import { isValidTransition, STATUS_LABELS, type OrderStatusKey } from "@/lib/utils/status-transitions";
+import { notificationService } from "@/lib/notifications";
+import type { ToastPayload } from "@/lib/notification-types";
 import { OrderStatus } from "@prisma/client";
 
 export async function createOrder(formData: FormData) {
@@ -138,6 +140,12 @@ export async function createOrder(formData: FormData) {
   }
 
   revalidatePath("/orders");
+  await notificationService({
+    type:    "ORDER_CREATED",
+    title:   `New order — ${orderNo}`,
+    body:    `Order ${orderNo} has been created.`,
+    orderId: orderId,
+  });
   redirect(`/orders/${orderId}`);
 }
 
@@ -151,9 +159,11 @@ export async function updateOrderStatus(
   const order = await prisma.order.findUnique({
     where: { id: orderId },
     select: {
-      status: true,
+      status:    true,
+      orderNo:   true,
       netAmount: true,
-      payments: { select: { amount: true } },
+      payments:  { select: { amount: true } },
+      customer:  { select: { email: true, name: true } },
     },
   });
   if (!order) return { error: "Order not found" };
@@ -202,7 +212,26 @@ export async function updateOrderStatus(
   if (newStatus === "CONFIRMED") {
     const { warnings } = await deductStockItemsForOrder(orderId, Number(session.user.id));
     if (warnings.length > 0) {
-      return { success: true as const, warnings };
+      await notificationService({
+        type:    "LOW_STOCK",
+        title:   "Low stock warning",
+        body:    warnings.join("; "),
+        orderId,
+      });
+      await notificationService({
+        type:          "ORDER_STATUS_CHANGED",
+        title:         `Order ${order.orderNo} — Confirmed`,
+        body:          `Status changed to Confirmed`,
+        orderId,
+        orderStatus:   newStatus,
+        customerEmail: order.customer.email ?? undefined,
+      });
+      const toast: ToastPayload = {
+        type:  "info",
+        title: `Order confirmed`,
+        body:  `Low stock: ${warnings.join("; ")}`,
+      };
+      return { success: true as const, warnings, toast };
     }
   }
 
@@ -211,7 +240,20 @@ export async function updateOrderStatus(
     await restoreStockItemsForOrder(orderId, Number(session.user.id));
   }
 
-  return { success: true as const };
+  await notificationService({
+    type:          "ORDER_STATUS_CHANGED",
+    title:         `Order ${order.orderNo} — ${STATUS_LABELS[newStatus as OrderStatusKey]}`,
+    body:          `Status changed from ${STATUS_LABELS[order.status as OrderStatusKey]} to ${STATUS_LABELS[newStatus as OrderStatusKey]}`,
+    orderId,
+    orderStatus:   newStatus,
+    customerEmail: order.customer.email ?? undefined,
+  });
+
+  const toast: ToastPayload = {
+    type:  "success",
+    title: `Status updated — ${STATUS_LABELS[newStatus as OrderStatusKey]}`,
+  };
+  return { success: true as const, toast };
 }
 
 export async function updateOrderDetails(orderId: number, formData: FormData) {
@@ -252,7 +294,7 @@ export async function updateOrderDetails(orderId: number, formData: FormData) {
   });
 
   revalidatePath(`/orders/${orderId}`);
-  return { success: true };
+  return { success: true, toast: { type: "success" as const, title: "Details updated" } };
 }
 
 export async function updateOrderItems(orderId: number, formData: FormData) {
