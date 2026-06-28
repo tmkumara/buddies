@@ -1,57 +1,83 @@
 "use client";
 
-import { useState } from "react";
 import { MessageCircle, Link2 } from "lucide-react";
-import { useToast } from "@/lib/toast-context";
 
-interface Props {
-  orderNo:      string;
-  customerName: string;
-  netAmount:    number;
-  balance:      number;
-  publicToken:  string | null;
+export interface InvoiceItem {
+  code:         string;
+  name:         string;
+  boxTypeName?: string;
+  sizeStr?:     string;
+  quantity:     number;
+  unitPrice:    number;
+  lineTotal:    number;
 }
 
-export default function WhatsAppShareButton({ orderNo, customerName, netAmount, balance, publicToken }: Props) {
-  const { showToast } = useToast();
-  const [loading, setLoading] = useState(false);
+interface Props {
+  orderNo:            string;
+  customerName:       string;
+  orderDate:          string;
+  deliveryDate?:      string | null;
+  items:              InvoiceItem[];
+  totalAmount:        number;
+  discountAmount:     number;
+  discountPct:        number;
+  deliveryCharge:     number;
+  deliveryMethodName?: string | null;
+  netAmount:          number;
+  totalPaid:          number;
+  balance:            number;
+  publicToken:        string | null;
+}
 
+export default function WhatsAppShareButton({
+  orderNo, customerName, orderDate, deliveryDate,
+  items, totalAmount, discountAmount, discountPct,
+  deliveryCharge, deliveryMethodName,
+  netAmount, totalPaid, balance, publicToken,
+}: Props) {
   if (!publicToken) return null;
 
-  const shareText = [
-    "Buddies — Invoice",
-    "",
-    `Order: ${orderNo}`,
-    `Customer: ${customerName}`,
-    `Amount: Rs. ${netAmount.toFixed(2)}`,
-    `Balance Due: Rs. ${balance.toFixed(2)}`,
-  ].join("\n");
+  const SEP = "─────────────────────";
 
-  async function handleShare() {
-    setLoading(true);
-    try {
-      const res  = await fetch(`/api/invoice/${publicToken}/pdf`);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const blob = await res.blob();
-      const file = new File([blob], `${orderNo}-invoice.pdf`, { type: "application/pdf" });
+  function buildMessage() {
+    const lines: string[] = [
+      "*Buddies — Invoice*",
+      "",
+      `*Order:* ${orderNo}`,
+      `*Customer:* ${customerName}`,
+      `*Date:* ${orderDate}`,
+    ];
+    if (deliveryDate) lines.push(`*Delivery:* ${deliveryDate}`);
 
-      if (navigator.canShare?.({ files: [file] })) {
-        await navigator.share({ files: [file], title: `Invoice ${orderNo}`, text: shareText });
-      } else {
-        const a = document.createElement("a");
-        a.href = URL.createObjectURL(blob);
-        a.download = `${orderNo}-invoice.pdf`;
-        a.click();
-        URL.revokeObjectURL(a.href);
-        showToast({ type: "info", title: "PDF downloaded — share it manually via WhatsApp" });
-      }
-    } catch (err) {
-      if ((err as Error).name !== "AbortError") {
-        showToast({ type: "error", title: "Could not share PDF — check your connection" });
-      }
-    } finally {
-      setLoading(false);
+    lines.push("", SEP, "*ITEMS*", SEP);
+
+    for (const item of items) {
+      lines.push(`*${item.code}* — ${item.name}`);
+      const sub = [item.boxTypeName, item.sizeStr].filter(Boolean).join("  ·  ");
+      if (sub) lines.push(`_${sub}_`);
+      lines.push(`Qty ${item.quantity}  ×  Rs. ${item.unitPrice.toFixed(2)}  =  *Rs. ${item.lineTotal.toFixed(2)}*`);
+      lines.push("");
     }
+
+    lines.push(SEP);
+    lines.push(`Subtotal:        Rs. ${totalAmount.toFixed(2)}`);
+    if (discountAmount > 0) {
+      lines.push(`_Discount (${discountPct.toFixed(1)}%):  −Rs. ${discountAmount.toFixed(2)}_`);
+    }
+    if (deliveryCharge > 0) {
+      lines.push(`${deliveryMethodName ?? "Delivery"}:  Rs. ${deliveryCharge.toFixed(2)}`);
+    }
+    lines.push(`*Net Amount:     Rs. ${netAmount.toFixed(2)}*`);
+    lines.push("");
+    lines.push(`Paid:            Rs. ${totalPaid.toFixed(2)}`);
+    lines.push(`*Balance Due:    Rs. ${Math.max(0, balance).toFixed(2)}*`);
+    lines.push(SEP);
+
+    return lines.join("\n");
+  }
+
+  function handleWhatsApp() {
+    window.open(`https://wa.me/?text=${encodeURIComponent(buildMessage())}`, "_blank");
   }
 
   function handleCopy() {
@@ -63,17 +89,15 @@ export default function WhatsAppShareButton({ orderNo, customerName, netAmount, 
     <>
       <button
         type="button"
-        onClick={handleShare}
-        disabled={loading}
+        onClick={handleWhatsApp}
         style={{
           display: "flex", alignItems: "center", gap: "0.4rem",
           background: "rgba(37,211,102,0.1)", border: "1px solid rgba(37,211,102,0.3)",
           borderRadius: "0.5rem", padding: "0.5rem 0.9rem",
-          color: "#25D366", fontSize: "0.68rem", letterSpacing: "0.07em",
-          cursor: loading ? "wait" : "pointer", opacity: loading ? 0.7 : 1,
+          color: "#25D366", fontSize: "0.68rem", letterSpacing: "0.07em", cursor: "pointer",
         }}
       >
-        <MessageCircle size={13} /> {loading ? "LOADING…" : "WHATSAPP"}
+        <MessageCircle size={13} /> WHATSAPP
       </button>
       <button
         type="button"

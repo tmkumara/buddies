@@ -150,7 +150,24 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
               <WhatsAppShareButton
                 orderNo={order.orderNo}
                 customerName={order.customer.name}
+                orderDate={orderDate}
+                deliveryDate={deliveryDate}
+                items={order.items.map((item) => ({
+                  code:        item.designCode,
+                  name:        item.designName,
+                  boxTypeName: item.boxDesign?.designType?.name ?? undefined,
+                  sizeStr:     itemSizeStr(item.boxDesign ?? null),
+                  quantity:    item.quantity,
+                  unitPrice:   Number(item.unitPrice),
+                  lineTotal:   Number(item.lineTotal),
+                }))}
+                totalAmount={totalAmount}
+                discountAmount={discountAmount}
+                discountPct={discountPct}
+                deliveryCharge={deliveryCharge}
+                deliveryMethodName={order.deliveryMethod?.name}
                 netAmount={netAmount}
+                totalPaid={totalPaid}
                 balance={balance}
                 publicToken={order.publicToken}
               />
