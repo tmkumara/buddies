@@ -32,6 +32,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
         orderBy: { paymentDate: "asc" },
         select: { id: true, amount: true, paymentDate: true, method: true, referenceNo: true, note: true },
       },
+      deliveryMethod: { select: { name: true } },
     },
   });
 
@@ -41,6 +42,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
 
   const totalAmount    = Number(order.totalAmount);
   const discountAmount = Number(order.discountAmount);
+  const deliveryCharge = Number(order.deliveryCharge);
   const netAmount      = Number(order.netAmount);
   const discountPct    = totalAmount > 0 ? Math.round((discountAmount / totalAmount) * 100 * 100) / 100 : 0;
 
@@ -155,6 +157,18 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
               <p style={metaLabel}>DELIVERY DATE</p>
               <p style={{ ...metaValue, color: deliveryDate ? "#F0EDE6" : "rgba(240,237,230,0.25)" }}>{deliveryDate ?? "Not set"}</p>
             </div>
+            {order.deliveryMethod && (
+              <div>
+                <p style={metaLabel}>DELIVERY METHOD</p>
+                <p style={metaValue}>{order.deliveryMethod.name}</p>
+              </div>
+            )}
+            {deliveryCharge > 0 && (
+              <div>
+                <p style={metaLabel}>DELIVERY CHARGE</p>
+                <p style={metaValue}>Rs. {deliveryCharge.toFixed(2)}</p>
+              </div>
+            )}
             {order.remarks && (
               <div style={{ gridColumn: "1 / -1" }}>
                 <p style={metaLabel}>REMARKS</p>
@@ -204,6 +218,12 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                   <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.82rem", color: "#F87171" }}>
                     <span>Discount ({discountPct}%)</span>
                     <span>− Rs. {discountAmount.toFixed(2)}</span>
+                  </div>
+                )}
+                {deliveryCharge > 0 && (
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.82rem", color: "rgba(240,237,230,0.55)" }}>
+                    <span>{order.deliveryMethod?.name ?? "Delivery"}</span>
+                    <span>Rs. {deliveryCharge.toFixed(2)}</span>
                   </div>
                 )}
                 <div style={{

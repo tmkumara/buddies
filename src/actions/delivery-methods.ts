@@ -4,15 +4,7 @@ import { revalidatePath } from "next/cache";
 import { requireAuth } from "@/lib/auth-guards";
 import prisma from "@/lib/prisma";
 
-export async function getLeadSources() {
-  return prisma.leadSource.findMany({
-    where:   { active: true },
-    orderBy: { id: "asc" },
-    select:  { id: true, name: true },
-  });
-}
-
-export async function createLeadSource(formData: FormData) {
+export async function createDeliveryMethod(formData: FormData) {
   const session = await requireAuth();
   if (session.user.role !== "ADMIN") return { error: "Admin only" };
 
@@ -20,13 +12,12 @@ export async function createLeadSource(formData: FormData) {
   if (!name) return { error: "Name is required" };
   if (name.length > 100) return { error: "Name must be 100 characters or less" };
 
-  await prisma.leadSource.create({ data: { name } });
+  await prisma.deliveryMethod.create({ data: { name } });
   revalidatePath("/settings");
-  revalidatePath("/settings/lead-sources");
   return { success: true as const };
 }
 
-export async function updateLeadSource(formData: FormData) {
+export async function updateDeliveryMethod(formData: FormData) {
   const session = await requireAuth();
   if (session.user.role !== "ADMIN") return { error: "Admin only" };
 
@@ -34,11 +25,10 @@ export async function updateLeadSource(formData: FormData) {
   const name   = (formData.get("name") as string)?.trim();
   const active = formData.get("active") !== "false";
 
-  if (!id || isNaN(id)) return { error: "Invalid lead source ID" };
+  if (!id || isNaN(id)) return { error: "Invalid delivery method ID" };
   if (!name) return { error: "Name is required" };
 
-  await prisma.leadSource.update({ where: { id }, data: { name, active } });
+  await prisma.deliveryMethod.update({ where: { id }, data: { name, active } });
   revalidatePath("/settings");
-  revalidatePath("/settings/lead-sources");
   return { success: true as const };
 }
