@@ -185,35 +185,6 @@ export default function CustomersClient({
         </div>
       )}
 
-      {/* Mobile cards */}
-      {customers.length > 0 && (
-        <div id="customers-card-view">
-          {customers.map((c) => (
-            <div
-              key={c.id}
-              className="material-card"
-              style={{
-                opacity: c.active ? 1 : 0.55,
-                cursor: "pointer",
-              }}
-              onClick={() => openEdit(c.id)}
-            >
-              <div className="material-card-face" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                <div>
-                  <p style={{ fontWeight: 700, color: "#F0EDE6", fontSize: "0.85rem" }}>{c.name}</p>
-                  <p style={{ fontSize: "0.72rem", color: "rgba(240,237,230,0.55)", marginTop: "0.2rem" }}>{c.phone}</p>
-                  {c.email && <p style={{ fontSize: "0.68rem", color: "rgba(240,237,230,0.38)", marginTop: "0.15rem" }}>{c.email}</p>}
-                </div>
-                <span className={`status-pill ${c.active ? "status-fulfilled" : "status-cancelled"}`}>
-                  {c.active ? "ACTIVE" : "INACTIVE"}
-                </span>
-              </div>
-            </div>
-          ))}
-          <PaginationBar total={filteredTotal} page={page} size={size} currentParams={currentParams} />
-        </div>
-      )}
-
       <CustomerSlideOver open={slideOpen} onClose={closeSlide} existing={editTarget} />
     </div>
   );
