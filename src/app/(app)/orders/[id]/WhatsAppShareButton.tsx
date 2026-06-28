@@ -12,11 +12,20 @@ interface Props {
   publicToken:  string | null;
 }
 
-export default function WhatsAppShareButton({ orderNo, publicToken }: Props) {
+export default function WhatsAppShareButton({ orderNo, customerName, netAmount, balance, publicToken }: Props) {
   const { showToast } = useToast();
   const [loading, setLoading] = useState(false);
 
   if (!publicToken) return null;
+
+  const shareText = [
+    "Buddies Gift Box — Invoice",
+    "",
+    `Order: ${orderNo}`,
+    `Customer: ${customerName}`,
+    `Amount: Rs. ${netAmount.toFixed(2)}`,
+    `Balance Due: Rs. ${balance.toFixed(2)}`,
+  ].join("\n");
 
   async function handleShare() {
     setLoading(true);
@@ -27,7 +36,7 @@ export default function WhatsAppShareButton({ orderNo, publicToken }: Props) {
       const file = new File([blob], `${orderNo}-invoice.pdf`, { type: "application/pdf" });
 
       if (navigator.canShare?.({ files: [file] })) {
-        await navigator.share({ files: [file], title: `Invoice ${orderNo}` });
+        await navigator.share({ files: [file], title: `Invoice ${orderNo}`, text: shareText });
       } else {
         const a = document.createElement("a");
         a.href = URL.createObjectURL(blob);
