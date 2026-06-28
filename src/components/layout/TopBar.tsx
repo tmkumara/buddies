@@ -1,7 +1,8 @@
 "use client";
 
 import { useSession } from "next-auth/react";
-import { Bell, ChevronDown } from "lucide-react";
+import { ChevronDown } from "lucide-react";
+import NotificationBell from "@/components/layout/NotificationBell";
 
 export default function TopBar({ title }: { title: string }) {
   const { data: session } = useSession();
@@ -15,25 +16,7 @@ export default function TopBar({ title }: { title: string }) {
       </h1>
 
       <div className="flex items-center gap-4">
-        <button
-          aria-label="Notifications"
-          style={{
-            position: "relative",
-            background: "rgba(245,182,30,0.07)",
-            border: "1px solid rgba(245,182,30,0.14)",
-            borderRadius: "0.5rem",
-            padding: "0.4rem",
-            cursor: "pointer",
-            color: "rgba(240,237,230,0.5)",
-            display: "flex",
-          }}
-        >
-          <Bell size={16} strokeWidth={1.5} />
-          <span style={{
-            position: "absolute", top: "-3px", right: "-3px",
-            width: "8px", height: "8px", background: "#F5B61E", borderRadius: "50%",
-          }} />
-        </button>
+        <NotificationBell />
 
         <div style={{
           display: "flex", alignItems: "center", gap: "0.6rem",
