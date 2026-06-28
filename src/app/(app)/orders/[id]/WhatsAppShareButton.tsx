@@ -33,11 +33,11 @@ export default function WhatsAppShareButton({ orderNo, publicToken }: Props) {
         a.download = `${orderNo}-invoice.pdf`;
         a.click();
         URL.revokeObjectURL(a.href);
-        showToast("PDF downloaded — share it manually via WhatsApp");
+        showToast({ type: "info", title: "PDF downloaded — share it manually via WhatsApp" });
       }
     } catch (err) {
       if ((err as Error).name !== "AbortError") {
-        showToast("Could not share PDF — check your connection");
+        showToast({ type: "error", title: "Could not share PDF — check your connection" });
       }
     } finally {
       setLoading(false);
